@@ -1,0 +1,75 @@
+{% extends 'routing/base.html' %}
+{% load static %}
+{% block title %}Simulation — RouteOptima{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+{% block content %}
+<div class="page-header"><h1>▶ Route Simulation</h1><div class="desc">Animate a vehicle travelling a computed route.</div></div>
+<div style="display:flex;height:calc(100vh - 130px);padding:0 1.75rem 1rem;gap:1rem">
+  <div class="map-panel" style="border-radius:12px;border:1px solid var(--border)">
+    <div class="card-title">Compute Route First</div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Search or click map to pick start and end, then simulate.</p>
+    <div class="place-search-wrap"><span class="place-search-icon">🔍</span>
+      <input id="simSrc" class="place-search-input" type="text" placeholder="Start" autocomplete="off">
+      <div id="simSrcRes" class="place-results" style="display:none"></div></div>
+    <div class="place-search-wrap" style="margin-top:.5rem"><span class="place-search-icon">🔍</span>
+      <input id="simDst" class="place-search-input" type="text" placeholder="Destination" autocomplete="off">
+      <div id="simDstRes" class="place-results" style="display:none"></div></div>
+    <button class="btn btn-primary btn-sm" style="width:100%;margin-top:.75rem" onclick="simRoute()">Compute</button>
+    <div id="simStatus" style="font-size:12px;color:var(--text3);margin-top:.5rem"></div>
+    <button id="simPlay" class="btn btn-secondary btn-sm" style="width:100%;margin-top:.5rem;display:none" onclick="playSimulation()">▶ Start Simulation</button>
+    <div style="margin-top:.75rem" id="speedRow" style="display:none">
+      <label style="font-size:11px;color:var(--text3)">Speed</label>
+      <input type="range" id="simSpeed" min="1" max="10" value="5" style="width:100%;accent-color:var(--accent)">
+    </div>
+  </div>
+  <div style="flex:1;border-radius:12px;overflow:hidden;border:1px solid var(--border)">
+    <div id="simMap" style="width:100%;height:100%"></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const smap = L.map('simMap').setView([27.7103,85.3222],12);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(smap);
+let simPath=[], simLine=null, simMarker=null, animFrame=null;
+let simSrc=null, simDst=null;
+
+buildSearchUI(document.getElementById('simSrc'),document.getElementById('simSrcRes'),p=>{simSrc=p;});
+buildSearchUI(document.getElementById('simDst'),document.getElementById('simDstRes'),p=>{simDst=p;});
+
+async function simRoute(){
+  if(!simSrc||!simDst){document.getElementById('simStatus').textContent='Please select both points.';return;}
+  document.getElementById('simStatus').textContent='Computing…';
+  const csrf=document.cookie.split('; ').find(r=>r.startsWith('csrftoken='))?.split('=')[1]||'';
+  const r=await fetch('/api/route/',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRFToken':csrf},
+    body:JSON.stringify({src_lat:simSrc.lat,src_lon:simSrc.lon,dst_lat:simDst.lat,dst_lon:simDst.lon,mode:'car',src_name:simSrc.name,dst_name:simDst.name})});
+  const j=await r.json();
+  if(j.status!=='success'){document.getElementById('simStatus').textContent=j.message;return;}
+  simPath=j.data.path_coords.map(c=>[c.lat,c.lon]);
+  if(simLine)smap.removeLayer(simLine);
+  simLine=L.polyline(simPath,{color:'#3b82f6',weight:4,opacity:.5}).addTo(smap);
+  smap.fitBounds(simLine.getBounds(),{padding:[40,40]});
+  document.getElementById('simStatus').textContent=`Route ready — ${j.data.total_distance_km} km`;
+  document.getElementById('simPlay').style.display='block';
+  document.getElementById('speedRow').style.display='block';
+}
+
+function playSimulation(){
+  if(!simPath.length)return;
+  cancelAnimationFrame(animFrame);
+  if(simMarker)smap.removeLayer(simMarker);
+  simMarker=L.marker(simPath[0]).addTo(smap);
+  let idx=0;
+  const speed=()=>parseInt(document.getElementById('simSpeed').value);
+  function step(){
+    idx=Math.min(idx+speed(),simPath.length-1);
+    simMarker.setLatLng(simPath[idx]);
+    if(idx<simPath.length-1)animFrame=requestAnimationFrame(step);
+  }
+  step();
+}
+</script>
+{% endblock %}

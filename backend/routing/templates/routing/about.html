@@ -1,0 +1,77 @@
+{% extends 'routing/base.html' %}
+{% block title %}About — RouteOptima{% endblock %}
+{% block public %}
+<nav class="landing-nav">
+  <a href="{% url 'landing' %}" class="landing-logo"><div class="icon">&#9672;</div><div><div class="name">RouteOptima</div></div></a>
+  <div class="nav-links">
+    <a href="{% url 'landing' %}">Home</a>
+    <a href="{% url 'docs' %}">Docs</a>
+    <a href="{% url 'team' %}">Team</a>
+    <a href="{% url 'help' %}">Help</a>
+  </div>
+  <div class="nav-actions">
+    {% if user.is_authenticated %}
+    <a href="{% url 'dashboard' %}" class="btn btn-primary btn-sm">Go to Dashboard</a>
+    {% else %}
+    <a href="{% url 'login' %}"    class="btn btn-ghost btn-sm">Log In</a>
+    <a href="{% url 'register' %}" class="btn btn-primary btn-sm">Get Started</a>
+    {% endif %}
+  </div>
+</nav>
+{% block content %}
+<div class="page-header" style="padding-top:5rem">
+  <h1>About RouteOptima</h1>
+  <div class="desc">Nepal's shortest-path route optimizer — built with Dijkstra's algorithm and OpenStreetMap.</div>
+</div>
+<div class="page-body">
+  <div style="display:grid;grid-template-columns:1fr 300px;gap:1.5rem;max-width:960px">
+    <div>
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-title">What is RouteOptima?</div>
+        <p style="color:var(--text2);line-height:1.7;margin-bottom:.75rem">RouteOptima is a Final Year Project (FYP) built by Group 36 at IIMS College. It provides a web-based interface to compute the shortest drivable route between any two points across five districts of Nepal's Bagmati Province: <strong style="color:var(--text1)">Kathmandu, Bhaktapur, Lalitpur, Nuwakot, and Dhading</strong>.</p>
+        <p style="color:var(--text2);line-height:1.7;margin-bottom:.75rem">Real road network data is pulled from <strong style="color:var(--text1)">OpenStreetMap</strong> using the <code style="color:var(--accent2);font-family:monospace">osmnx</code> library and stored locally as a GraphML file. The graph is loaded into memory once, and subsequent route queries run in milliseconds.</p>
+        <p style="color:var(--text2);line-height:1.7">The core algorithm is <strong style="color:var(--accent2)">Dijkstra's Shortest Path First (SPF)</strong>, implemented via NetworkX. Users can search any place — a tea shop, a school, a bank — by name and instantly compute the shortest route.</p>
+      </div>
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-title">Technology Stack</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem">
+          <div style="padding:.65rem;background:var(--bg2);border-radius:8px;border:1px solid var(--border)"><div style="font-weight:700;margin-bottom:.2rem">Backend</div><div style="font-size:12px;color:var(--text2)">Python 3.11 · Django 4.x · Django REST Framework</div></div>
+          <div style="padding:.65rem;background:var(--bg2);border-radius:8px;border:1px solid var(--border)"><div style="font-weight:700;margin-bottom:.2rem">Algorithm</div><div style="font-size:12px;color:var(--text2)">Dijkstra SPF · NetworkX · OSMnx</div></div>
+          <div style="padding:.65rem;background:var(--bg2);border-radius:8px;border:1px solid var(--border)"><div style="font-weight:700;margin-bottom:.2rem">Database</div><div style="font-size:12px;color:var(--text2)">PostgreSQL (Render) — route logs, users, favourites</div></div>
+          <div style="padding:.65px;background:var(--bg2);border-radius:8px;border:1px solid var(--border)"><div style="font-weight:700;margin-bottom:.2rem">Frontend</div><div style="font-size:12px;color:var(--text2)">HTML5 · CSS3 · Leaflet.js · Chart.js · Nominatim</div></div>
+          <div style="padding:.65rem;background:var(--bg2);border-radius:8px;border:1px solid var(--border)"><div style="font-weight:700;margin-bottom:.2rem">Map Data</div><div style="font-size:12px;color:var(--text2)">OpenStreetMap (free, open-source)</div></div>
+          <div style="padding:.65rem;background:var(--bg2);border-radius:8px;border:1px solid var(--border)"><div style="font-weight:700;margin-bottom:.2rem">Deployment</div><div style="font-size:12px;color:var(--text2)">Vercel (web) · Render (PostgreSQL)</div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-title">Project Details</div>
+        <div style="display:flex;flex-direction:column;gap:.5rem;font-size:13px">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Group</span><span>Group 36</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Institute</span><span>IIMS College</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Partner</span><span>Taylor's University</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Year</span><span>2026</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Supervisor</span><span>Nabeen Kumar Aryal</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Algorithm</span><span style="color:var(--accent2)">Dijkstra SPF</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Districts</span><span>5</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Quick Links</div>
+        <div style="display:flex;flex-direction:column;gap:.5rem">
+          <a href="{% url 'docs' %}"  class="btn btn-secondary btn-sm" style="text-align:left">📚 API Documentation</a>
+          <a href="{% url 'team' %}"  class="btn btn-secondary btn-sm" style="text-align:left">👥 Meet the Team</a>
+          <a href="{% url 'help' %}"  class="btn btn-secondary btn-sm" style="text-align:left">❓ Help & FAQ</a>
+          {% if user.is_authenticated %}
+          <a href="{% url 'map' %}"   class="btn btn-primary btn-sm"   style="text-align:left">🗺 Open Route Map</a>
+          {% else %}
+          <a href="{% url 'register' %}" class="btn btn-primary btn-sm" style="text-align:left">🚀 Get Started Free</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% endblock %}

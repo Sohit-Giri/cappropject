@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Route Optimizer — Dijkstra SPF</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="app-shell">
+
+    <header class="topbar">
+      <div class="topbar-brand">
+        <div class="brand-icon">◈</div>
+        <div>
+          <div class="brand-title">Route Optimizer</div>
+          <div class="brand-sub">Dijkstra Shortest Path First</div>
+        </div>
+      </div>
+      <div class="status-pill" id="statusPill">Connecting...</div>
+    </header>
+
+    <div class="main-layout">
+
+      <aside class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">HOW TO USE</div>
+          <div class="help-steps">
+            <div class="help-step"><span class="step-num">1</span>Click map to set <span class="c-green">Start</span></div>
+            <div class="help-step"><span class="step-num">2</span>Click again to set <span class="c-red">End</span></div>
+            <div class="help-step"><span class="step-num">3</span>Route computes automatically</div>
+          </div>
+        </div>
+
+        <div class="sidebar-section" id="coordsPanel" style="display:none">
+          <div class="sidebar-label">WAYPOINTS</div>
+          <div class="coord-row" id="srcCoord"><span class="dot green"></span><span class="coord-text">—</span></div>
+          <div class="coord-row" id="dstCoord"><span class="dot red"></span><span class="coord-text">—</span></div>
+        </div>
+
+        <div class="sidebar-section" id="resultPanel" style="display:none">
+          <div class="sidebar-label">RESULT</div>
+          <div class="metric-grid">
+            <div class="metric-card">
+              <div class="metric-val" id="metricDist">—</div>
+              <div class="metric-lbl">km</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-val" id="metricNodes">—</div>
+              <div class="metric-lbl">nodes</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">GRAPH INFO</div>
+          <div class="info-row"><span class="info-lbl">Area</span><span class="info-val" id="infoPlace">—</span></div>
+          <div class="info-row"><span class="info-lbl">Nodes</span><span class="info-val" id="infoNodes">—</span></div>
+          <div class="info-row"><span class="info-lbl">Edges</span><span class="info-val" id="infoEdges">—</span></div>
+        </div>
+
+        <button class="reset-btn" id="resetBtn" onclick="resetMap()">Clear Route</button>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">RECENT ROUTES</div>
+          <div id="historyList" class="history-list"></div>
+        </div>
+      </aside>
+
+      <div class="map-wrap">
+        <div id="map"></div>
+        <div class="map-hint" id="mapHint">Click anywhere on the map to set your starting point</div>
+        <div class="loading-overlay" id="loadingOverlay" style="display:none">
+          <div class="spinner"></div>
+          <div>Computing route...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/static/js/app.js" defer></script>
+</body>
+</body>
+</html>

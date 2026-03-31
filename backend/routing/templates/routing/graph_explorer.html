@@ -1,0 +1,23 @@
+{% extends 'routing/base.html' %}
+{% block title %}Graph Explorer — RouteOptima{% endblock %}
+{% block content %}
+<div class="page-header"><h1>◉ Graph Explorer</h1><div class="desc">Road network metadata for all loaded districts.</div></div>
+<div class="page-body">
+  <div class="stats-grid" style="margin-bottom:1.5rem">
+    <div class="stat-card blue"><div class="stat-icon">◦</div><div class="stat-val">{{ graph_info.nodes|default:"—" }}</div><div class="stat-lbl">Total Nodes</div></div>
+    <div class="stat-card green"><div class="stat-icon">↔</div><div class="stat-val">{{ graph_info.edges|default:"—" }}</div><div class="stat-lbl">Total Edges</div></div>
+    <div class="stat-card yellow"><div class="stat-icon">📍</div><div class="stat-val">{{ graph_info.loaded_count|default:"0" }}</div><div class="stat-lbl">Districts Loaded</div></div>
+    <div class="stat-card purple"><div class="stat-icon">✓</div><div class="stat-val">{% if graph_info.loaded %}Ready{% else %}Loading{% endif %}</div><div class="stat-lbl">Status</div></div>
+  </div>
+  {% if graph_info.loaded %}
+  <div class="card">
+    <div class="card-title">Loaded Districts</div>
+    {% for d in graph_info.districts %}
+    <div class="district-chip" style="display:inline-flex;margin:.25rem">📍 {{ d }}</div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card"><div style="color:var(--yellow)">⏳ {{ graph_info.message }}</div></div>
+  {% endif %}
+</div>
+{% endblock %}

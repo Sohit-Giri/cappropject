@@ -1,0 +1,27 @@
+{% extends 'routing/base.html' %}
+{% block title %}Help — RouteOptima{% endblock %}
+{% block public %}
+<nav class="landing-nav">
+  <a href="{% url 'landing' %}" class="landing-logo"><div class="icon">&#9672;</div><div><div class="name">RouteOptima</div></div></a>
+  <div class="nav-links"><a href="{% url 'landing' %}">Home</a><a href="{% url 'about' %}">About</a><a href="{% url 'docs' %}">Docs</a><a href="{% url 'team' %}">Team</a></div>
+  <div class="nav-actions">
+    {% if user.is_authenticated %}<a href="{% url 'dashboard' %}" class="btn btn-primary btn-sm">Dashboard</a>
+    {% else %}<a href="{% url 'login' %}" class="btn btn-ghost btn-sm">Log In</a><a href="{% url 'register' %}" class="btn btn-primary btn-sm">Sign Up</a>{% endif %}
+  </div>
+</nav>
+{% block content %}
+<div class="page-header" style="padding-top:5rem"><h1>❓ Help & FAQ</h1><div class="desc">Common questions and troubleshooting tips.</div></div>
+<div class="page-body">
+  <div style="max-width:720px">
+    <div class="faq-item"><div class="faq-q">Why is the map blank or stuck on "Loading districts"?</div><div class="faq-a">The backend is downloading road data for all 5 districts from OpenStreetMap on first run. This can take 2–5 minutes. The status indicator turns green when ready. Cached runs start instantly.</div></div>
+    <div class="faq-item"><div class="faq-q">How does place search work?</div><div class="faq-a">We use the Nominatim (OpenStreetMap) geocoding API. Type any place name — a tea shop, school, temple, bank — and results will appear as a dropdown. Select one to place the marker.</div></div>
+    <div class="faq-item"><div class="faq-q">Can I also click on the map instead of searching?</div><div class="faq-a">Yes! Click the "📌 Click on map" button to enter click mode. Your next click on the map places either the start or end marker. The map auto-reverses coordinates to a place name.</div></div>
+    <div class="faq-item"><div class="faq-q">What districts are covered?</div><div class="faq-a">Kathmandu, Bhaktapur, Lalitpur, Nuwakot, and Dhading — all within Bagmati Province. The combined graph contains over 50,000 road nodes and 100,000+ edges.</div></div>
+    <div class="faq-item"><div class="faq-q">How do I share a route?</div><div class="faq-a">After computing a route, click the "🔗 Share" button. A unique URL is copied to your clipboard. Anyone can open this link without needing to log in.</div></div>
+    <div class="faq-item"><div class="faq-q">What is the Heatmap page?</div><div class="faq-a">It shows a visual heat map of the most popular start and end points across all users. Brighter areas mean more activity.</div></div>
+    <div class="faq-item"><div class="faq-q">How does the Leaderboard work?</div><div class="faq-a">It ranks all registered users by their total computed distance (km). The more routes you calculate, the higher your ranking.</div></div>
+    <div class="faq-item"><div class="faq-q">Can I change the colour theme?</div><div class="faq-a">Yes! Go to Settings or click the coloured dots in the top navigation bar. There are 6 themes: Midnight, Obsidian, Emerald, Crimson, Arctic, and Parchment (light).</div></div>
+  </div>
+</div>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'routing/base.html' %}
+{% block title %}Documentation — RouteOptima{% endblock %}
+{% block public %}
+<nav class="landing-nav">
+  <a href="{% url 'landing' %}" class="landing-logo"><div class="icon">&#9672;</div><div><div class="name">RouteOptima</div></div></a>
+  <div class="nav-links"><a href="{% url 'landing' %}">Home</a><a href="{% url 'about' %}">About</a><a href="{% url 'team' %}">Team</a></div>
+  <div class="nav-actions">
+    {% if user.is_authenticated %}<a href="{% url 'dashboard' %}" class="btn btn-primary btn-sm">Dashboard</a>
+    {% else %}<a href="{% url 'login' %}" class="btn btn-ghost btn-sm">Log In</a><a href="{% url 'register' %}" class="btn btn-primary btn-sm">Sign Up</a>{% endif %}
+  </div>
+</nav>
+{% block content %}
+<div class="page-header" style="padding-top:5rem"><h1>📚 API Documentation</h1><div class="desc">REST API reference for the RouteOptima backend</div></div>
+<div class="page-body">
+  <div class="content-wrap">
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">Authentication</div>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6">All protected endpoints require session authentication. Log in via the web UI at <code style="color:var(--accent2)">/login/</code>. The session cookie is automatically included. Public endpoints (<code style="color:var(--accent2)">/api/health/</code>, <code style="color:var(--accent2)">/api/graph/</code>) require no login.</p>
+    </div>
+    <div class="api-endpoint">
+      <div><span class="endpoint-method method-post">POST</span><span class="endpoint-url">/api/route/</span></div>
+      <p style="font-size:13px;color:var(--text2);margin:.4rem 0">Compute the shortest route using Dijkstra's algorithm.</p>
+      <div class="code-block">Request: {"src_lat":27.7103,"src_lon":85.3222,"dst_lat":27.7350,"dst_lon":85.3400,"src_name":"Pashupatinath","dst_name":"Boudha","mode":"car"}
+Response: {"status":"success","data":{"path_coords":[...],"total_distance_km":4.251,"eta_minutes":6.4,"node_count":47,"route_id":12,"share_token":"uuid..."}}</div>
+    </div>
+    <div class="api-endpoint">
+      <div><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/api/health/</span></div>
+      <p style="font-size:13px;color:var(--text2);margin:.4rem 0">Check backend and graph status.</p>
+      <div class="code-block">{"status":"ready","graph":{"loaded":true,"nodes":52300,"edges":119800,"loaded_count":5,"total":5}}</div>
+    </div>
+    <div class="api-endpoint">
+      <div><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/api/analytics/</span></div>
+      <p style="font-size:13px;color:var(--text2);margin:.4rem 0">Get personal route statistics and daily counts.</p>
+    </div>
+    <div class="api-endpoint">
+      <div><span class="endpoint-method method-post">POST</span><span class="endpoint-url">/api/save-route/</span></div>
+      <p style="font-size:13px;color:var(--text2);margin:.4rem 0">Save a route to favourites.</p>
+      <div class="code-block">{"route_id": 12, "label": "Office commute"}</div>
+    </div>
+    <div class="api-endpoint">
+      <div><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/api/heatmap-data/</span></div>
+      <p style="font-size:13px;color:var(--text2);margin:.4rem 0">Returns lat/lon intensity points for heatmap overlay.</p>
+    </div>
+    <div class="api-endpoint">
+      <div><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/api/leaderboard-data/</span></div>
+      <p style="font-size:13px;color:var(--text2);margin:.4rem 0">Top 10 users by total distance computed.</p>
+    </div>
+    <div class="api-endpoint">
+      <div><span class="endpoint-method method-post">POST</span><span class="endpoint-url">/api/set-theme/</span></div>
+      <p style="font-size:13px;color:var(--text2);margin:.4rem 0">Save the user's theme preference.</p>
+      <div class="code-block">{"theme": "emerald"}</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% endblock %}

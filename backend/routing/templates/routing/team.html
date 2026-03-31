@@ -1,0 +1,47 @@
+{% extends 'routing/base.html' %}
+{% block title %}Team — RouteOptima{% endblock %}
+{% block public %}
+<nav class="landing-nav">
+  <a href="{% url 'landing' %}" class="landing-logo"><div class="icon">&#9672;</div><div><div class="name">RouteOptima</div></div></a>
+  <div class="nav-links"><a href="{% url 'landing' %}">Home</a><a href="{% url 'about' %}">About</a><a href="{% url 'docs' %}">Docs</a></div>
+  <div class="nav-actions">
+    {% if user.is_authenticated %}<a href="{% url 'dashboard' %}" class="btn btn-primary btn-sm">Dashboard</a>
+    {% else %}<a href="{% url 'login' %}" class="btn btn-ghost btn-sm">Log In</a><a href="{% url 'register' %}" class="btn btn-primary btn-sm">Sign Up</a>{% endif %}
+  </div>
+</nav>
+{% block content %}
+<div class="page-header" style="padding-top:5rem"><h1>👥 The Team</h1><div class="desc">Group 36 — IIMS College / Taylor's University · Capstone Project 2026</div></div>
+<div class="page-body">
+  <div class="card" style="max-width:820px;margin-bottom:1.5rem;padding:1.25rem 1.5rem">
+    <p style="color:var(--text2);line-height:1.7">RouteOptima was designed and built by a five-person team under the supervision of <strong style="color:var(--text1)">Nabeen Kumar Aryal</strong> as part of the Bachelor of Computer Science (Honours) degree programme at IIMS College in partnership with Taylor's University, Malaysia.</p>
+  </div>
+  <div class="team-grid" style="max-width:900px">
+    <div class="team-card" style="border-color:var(--accent)">
+      <div class="team-avatar" style="background:var(--accent)">SK</div>
+      <h3>Sudip KC</h3><div class="role">🏅 Project Leader<br>System Integration</div>
+      <div class="email">sudip23012002@iimscollege.edu.np</div>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar">SG</div>
+      <h3>Sohit Giri</h3><div class="role">⚙ Backend Architect<br>API & Database</div>
+      <div class="email">sohit23012005@iimscollege.edu.np</div>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar">MK</div>
+      <h3>Muskan Khadka</h3><div class="role">🗺 Map & Network<br>GIS Modelling</div>
+      <div class="email">muskan23012027@iimscollege.edu.np</div>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar">MP</div>
+      <h3>Mahima Parajuli</h3><div class="role">⚡ Algorithm Engineer<br>Dijkstra SPF</div>
+      <div class="email">mahima23012049@iimscollege.edu.np</div>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar">AB</div>
+      <h3>Apekshya Basnyat</h3><div class="role">🎨 Frontend Dev<br>UI / Simulation</div>
+      <div class="email">apekshya23012030@iimscollege.edu.np</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% endblock %}

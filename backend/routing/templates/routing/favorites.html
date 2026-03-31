@@ -1,0 +1,41 @@
+{% extends 'routing/base.html' %}
+{% block title %}Favourites — RouteOptima{% endblock %}
+{% block content %}
+<div class="page-header"><h1>⭐ Saved Favourites</h1><div class="desc">Your bookmarked routes.</div></div>
+<div class="page-body">
+{% if saved %}
+  {% for s in saved %}
+  <div class="saved-card" id="saved-{{ s.id }}">
+    <div class="saved-icon">⭐</div>
+    <div style="flex:1">
+      <div class="saved-label">{{ s.label }}</div>
+      <div class="saved-meta">{{ s.route_log.src_name|default:"—" }} → {{ s.route_log.dst_name|default:"—" }} · {{ s.route_log.path_distance_km }} km · {{ s.saved_at|date:"M j, Y" }}</div>
+    </div>
+    <a href="{% url 'replay' s.route_log.id %}" class="btn btn-secondary btn-sm">▶ Replay</a>
+    <a href="/share/{{ s.route_log.share_token }}/" class="btn btn-ghost btn-sm">🔗 Share</a>
+    <button class="btn btn-danger btn-sm" onclick="deleteSaved({{ s.id }})">✕</button>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="card" style="text-align:center;padding:3rem">
+    <div style="font-size:3rem;margin-bottom:.75rem">⭐</div>
+    <div style="font-weight:700;margin-bottom:.4rem">No saved routes yet</div>
+    <div style="color:var(--text2);font-size:13px;margin-bottom:1rem">Compute a route and click "Save" to bookmark it.</div>
+    <a href="{% url 'map' %}" class="btn btn-primary">Open Route Map</a>
+  </div>
+{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function deleteSaved(id) {
+  if (!confirm('Remove this saved route?')) return;
+  const r = await fetch(`/api/delete-saved/${id}/`, {
+    method:'DELETE', credentials:'same-origin',
+    headers:{'X-CSRFToken': document.cookie.split('; ').find(r=>r.startsWith('csrftoken='))?.split('=')[1]||''}
+  });
+  const j = await r.json();
+  if (j.status === 'ok') document.getElementById('saved-'+id)?.remove();
+}
+</script>
+{% endblock %}

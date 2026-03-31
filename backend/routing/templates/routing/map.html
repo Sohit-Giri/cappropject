@@ -1,0 +1,85 @@
+{% extends 'routing/base.html' %}
+{% load static %}
+{% block title %}Route Map — RouteOptima{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+{% block content %}
+<div class="map-layout" style="height:calc(100vh - 0px)">
+  <!-- Side panel -->
+  <div class="map-panel">
+    <div style="font-size:12px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.7px">Start Point</div>
+    <div class="place-search-wrap">
+      <span class="place-search-icon">🔍</span>
+      <input id="srcInput" class="place-search-input" type="text" placeholder="Search start (e.g. Pashupatinath)" autocomplete="off">
+      <div id="srcResults" class="place-results" style="display:none"></div>
+    </div>
+    <div id="srcCoord" class="coord-row" style="display:none">
+      <span class="lbl" style="color:var(--green)">A</span>
+      <span class="coord-text"></span>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:-.25rem" onclick="clicking='src';setHint('Click on the map to set start point')">📌 Click on map</button>
+
+    <div style="font-size:12px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-top:.5rem">End Point</div>
+    <div class="place-search-wrap">
+      <span class="place-search-icon">🔍</span>
+      <input id="dstInput" class="place-search-input" type="text" placeholder="Search destination (e.g. Boudha)" autocomplete="off">
+      <div id="dstResults" class="place-results" style="display:none"></div>
+    </div>
+    <div id="dstCoord" class="coord-row" style="display:none">
+      <span class="lbl" style="color:var(--red)">B</span>
+      <span class="coord-text"></span>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:-.25rem" onclick="clicking='dst';setHint('Click on the map to set end point')">📌 Click on map</button>
+
+    <div style="font-size:12px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-top:.5rem">Travel Mode</div>
+    <div class="mode-select">
+      <div class="mode-btn {% if mode == 'walk' %}active{% endif %}" data-mode="walk">🚶 Walk</div>
+      <div class="mode-btn {% if mode == 'bike' %}active{% endif %}" data-mode="bike">🚲 Bike</div>
+      <div class="mode-btn {% if mode == 'car' %}active{% else %}{% endif %}" data-mode="car" {% if mode != 'walk' and mode != 'bike' %}style="background:var(--accent);border-color:var(--accent);color:#fff"{% endif %}>🚗 Car</div>
+    </div>
+    <input type="hidden" id="selectedMode" value="{{ mode }}">
+
+    <div id="routeResult" style="display:none">
+      <div class="route-result">
+        <div class="card-title" style="margin-bottom:.5rem">Route Found</div>
+        <div class="row"><span class="label">Distance</span><span class="value" id="routeKm">—</span></div>
+        <div class="row"><span class="label">ETA</span><span class="value" id="routeEta">—</span></div>
+        <div class="row"><span class="label">Nodes</span><span id="routeNodes" style="font-size:13px;color:var(--text2)">—</span></div>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem">
+        <button class="btn btn-secondary btn-sm" onclick="saveRoute()" style="flex:1">⭐ Save</button>
+        <button class="btn btn-secondary btn-sm" onclick="shareRoute()" style="flex:1">🔗 Share</button>
+        <a id="replayBtn" href="#" class="btn btn-secondary btn-sm" style="flex:1">▶</a>
+      </div>
+    </div>
+
+    <button class="btn btn-ghost btn-sm" onclick="clearRoute()" style="margin-top:auto">✕ Clear</button>
+
+    <div style="display:flex;align-items:center;gap:.4rem;font-size:12px;padding:.5rem 0;border-top:1px solid var(--border);margin-top:.25rem">
+      <span id="statusDot" class="status-dot dot-yellow"></span>
+      <span id="statusLbl" style="color:var(--text2)">Checking…</span>
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div class="map-container">
+    <div id="mapLoading" class="map-loading" style="display:none">
+      <div class="spinner"></div>
+      <span>Computing route…</span>
+    </div>
+    <div id="map"></div>
+    <div id="mapHint" class="map-hint">Search or click map to set start point</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'routing/js/map.js' %}"></script>
+<script>
+document.getElementById('routeResult').querySelectorAll('#routeNodes').forEach(()=>{});
+document.getElementById('replayBtn').addEventListener('click', e=>{
+  if(window._lastRouteId){ e.currentTarget.href='/replay/'+window._lastRouteId+'/'; }
+});
+</script>
+{% endblock %}

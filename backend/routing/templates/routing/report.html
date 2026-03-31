@@ -1,0 +1,35 @@
+{% extends 'routing/base.html' %}
+{% block title %}Report — RouteOptima{% endblock %}
+{% block content %}
+<div class="page-header"><h1>📄 Report</h1><div class="desc">Auto-generated summary for your route activity.</div></div>
+<div class="page-body">
+  <div class="report-header">
+    <div style="font-size:1.5rem;font-weight:900;margin-bottom:.4rem">RouteOptima User Report</div>
+    <div style="font-size:13px;color:var(--text2)">{{ user.get_full_name|default:user.username }} · Generated {{ "now"|date:"M j, Y" }}</div>
+  </div>
+  <div class="stats-grid" style="margin-bottom:1.25rem">
+    <div class="stat-card blue"><div class="stat-val">{{ total }}</div><div class="stat-lbl">Total Routes</div></div>
+    <div class="stat-card green"><div class="stat-val">{{ total_km }}</div><div class="stat-lbl">Total km</div></div>
+    <div class="stat-card yellow"><div class="stat-val">{{ avg_km }}</div><div class="stat-lbl">Avg km/Route</div></div>
+    <div class="stat-card purple"><div class="stat-val">{% if max_route %}{{ max_route.path_distance_km }}{% else %}—{% endif %}</div><div class="stat-lbl">Longest Route km</div></div>
+  </div>
+  {% if routes %}
+  <div class="table-wrap card" style="padding:0">
+    <table>
+      <thead><tr><th>#</th><th>From</th><th>To</th><th>Distance</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for r in routes %}
+        <tr>
+          <td style="color:var(--text3)">{{ r.id }}</td>
+          <td>{{ r.src_name|default:"—" }}</td>
+          <td>{{ r.dst_name|default:"—" }}</td>
+          <td><span class="badge badge-blue">{{ r.path_distance_km }} km</span></td>
+          <td style="color:var(--text3)">{{ r.computed_at|date:"M j, Y" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

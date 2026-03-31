@@ -1,0 +1,90 @@
+{% extends 'routing/base.html' %}
+{% block title %}Dashboard — RouteOptima{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>👋 Welcome{% if user.first_name %}, {{ user.first_name }}{% endif %}!</h1>
+  <div class="desc">Here's your route activity at a glance.</div>
+</div>
+<div class="page-body">
+  <div class="stats-grid">
+    <div class="stat-card blue"><div class="stat-icon">🗺</div><div class="stat-val">{{ total_routes }}</div><div class="stat-lbl">Total Routes</div></div>
+    <div class="stat-card green"><div class="stat-icon">📏</div><div class="stat-val">{{ total_km }}</div><div class="stat-lbl">km Travelled</div></div>
+    <div class="stat-card yellow"><div class="stat-icon">⚡</div><div class="stat-val">{{ avg_km }}</div><div class="stat-lbl">Avg km / Route</div></div>
+    <div class="stat-card purple"><div class="stat-icon">⭐</div><div class="stat-val">{{ saved_count }}</div><div class="stat-lbl">Saved Routes</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:1rem;margin-bottom:1rem">
+    <!-- Graph status -->
+    <div class="card">
+      <div class="card-title">Graph Status</div>
+      {% if graph_info.loaded %}
+      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem">
+        <span class="status-dot dot-green"></span>
+        <span style="font-weight:700;color:var(--green)">All districts loaded</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem">
+        <div style="text-align:center;padding:.75rem;background:var(--bg2);border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:1.4rem;font-weight:800;color:var(--accent2)">{{ graph_info.nodes|default:"—" }}</div>
+          <div style="font-size:11px;color:var(--text3)">Nodes</div>
+        </div>
+        <div style="text-align:center;padding:.75rem;background:var(--bg2);border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:1.4rem;font-weight:800;color:var(--accent2)">{{ graph_info.edges|default:"—" }}</div>
+          <div style="font-size:11px;color:var(--text3)">Edges</div>
+        </div>
+        <div style="text-align:center;padding:.75rem;background:var(--bg2);border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:1.4rem;font-weight:800;color:var(--green)">{{ graph_info.loaded_count }}/{{ graph_info.total }}</div>
+          <div style="font-size:11px;color:var(--text3)">Districts</div>
+        </div>
+      </div>
+      {% else %}
+      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem">
+        <span class="status-dot dot-yellow"></span>
+        <span style="color:var(--yellow)">{{ graph_info.message }}</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:{{ graph_info.loaded_count|default:0 }}0%"></div></div>
+      {% endif %}
+    </div>
+    <!-- Quick nav -->
+    <div class="card">
+      <div class="card-title">Quick Access</div>
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        <a href="{% url 'map' %}"        class="btn btn-primary btn-sm">🗺 Open Route Map</a>
+        <a href="{% url 'compare' %}"    class="btn btn-secondary btn-sm">⇆ Compare Routes</a>
+        <a href="{% url 'favorites' %}"  class="btn btn-secondary btn-sm">⭐ My Favourites</a>
+        <a href="{% url 'heatmap' %}"    class="btn btn-secondary btn-sm">🔥 Route Heatmap</a>
+        <a href="{% url 'leaderboard' %}" class="btn btn-secondary btn-sm">🏆 Leaderboard</a>
+      </div>
+    </div>
+  </div>
+
+  {% if recent_routes %}
+  <div class="card">
+    <div class="card-title">Recent Routes</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>From</th><th>To</th><th>Distance</th><th>Date</th><th></th></tr></thead>
+        <tbody>
+          {% for r in recent_routes %}
+          <tr>
+            <td style="color:var(--text3)">{{ r.id }}</td>
+            <td>{{ r.src_name|default:"—" }}</td>
+            <td>{{ r.dst_name|default:"—" }}</td>
+            <td><span class="badge badge-blue">{{ r.path_distance_km }} km</span></td>
+            <td style="color:var(--text3)">{{ r.computed_at|date:"M j, H:i" }}</td>
+            <td><a href="{% url 'replay' r.id %}" class="btn btn-ghost btn-sm">▶ Replay</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;padding:2.5rem">
+    <div style="font-size:3rem;margin-bottom:.75rem">🗺</div>
+    <div style="font-weight:700;margin-bottom:.4rem">No routes yet</div>
+    <div style="color:var(--text2);font-size:13px;margin-bottom:1rem">Open the Route Map and compute your first route!</div>
+    <a href="{% url 'map' %}" class="btn btn-primary">Open Route Map</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

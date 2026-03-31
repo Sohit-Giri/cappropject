@@ -1,0 +1,125 @@
+{% extends 'routing/base.html' %}
+{% load static %}
+{% block title %}Compare Routes — RouteOptima{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>⇆ Compare Routes</h1>
+  <div class="desc">Search two routes side-by-side — Dijkstra vs a different endpoint.</div>
+</div>
+<div class="compare-wrap" style="height:calc(100vh - 130px)">
+  <div class="compare-inputs">
+    <!-- Route A -->
+    <div class="card" style="padding:.85rem">
+      <div class="card-title" style="color:var(--accent2)">Route A</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:.3rem;font-weight:700;text-transform:uppercase">Start A</div>
+          <div class="place-search-wrap"><span class="place-search-icon">🔍</span>
+            <input id="aSrcInput" class="place-search-input" type="text" placeholder="Start point A" autocomplete="off">
+            <div id="aSrcResults" class="place-results" style="display:none"></div></div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:.3rem;font-weight:700;text-transform:uppercase">End A</div>
+          <div class="place-search-wrap"><span class="place-search-icon">🔍</span>
+            <input id="aDstInput" class="place-search-input" type="text" placeholder="End point A" autocomplete="off">
+            <div id="aDstResults" class="place-results" style="display:none"></div></div>
+        </div>
+      </div>
+      <div id="aResult" style="margin-top:.5rem;font-size:12px;color:var(--text3)">Not computed</div>
+    </div>
+    <!-- Route B -->
+    <div class="card" style="padding:.85rem">
+      <div class="card-title" style="color:var(--green)">Route B</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:.3rem;font-weight:700;text-transform:uppercase">Start B</div>
+          <div class="place-search-wrap"><span class="place-search-icon">🔍</span>
+            <input id="bSrcInput" class="place-search-input" type="text" placeholder="Start point B" autocomplete="off">
+            <div id="bSrcResults" class="place-results" style="display:none"></div></div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:.3rem;font-weight:700;text-transform:uppercase">End B</div>
+          <div class="place-search-wrap"><span class="place-search-icon">🔍</span>
+            <input id="bDstInput" class="place-search-input" type="text" placeholder="End point B" autocomplete="off">
+            <div id="bDstResults" class="place-results" style="display:none"></div></div>
+        </div>
+      </div>
+      <div id="bResult" style="margin-top:.5rem;font-size:12px;color:var(--text3)">Not computed</div>
+    </div>
+  </div>
+  <div class="compare-maps">
+    <div class="compare-map-box"><div class="map-label" style="border-color:var(--accent)">🔵 Route A</div><div id="mapA" style="width:100%;height:100%"></div></div>
+    <div class="compare-map-box"><div class="map-label" style="border-color:var(--green)">🟢 Route B</div><div id="mapB" style="width:100%;height:100%"></div></div>
+  </div>
+  <div class="compare-panel" id="comparePanel" style="display:none">
+    <div><div class="compare-stat"><div class="val" id="cAkm" style="color:var(--accent2)">—</div><div class="lbl">Route A km</div></div></div>
+    <div><div class="compare-stat"><div class="val" id="cBkm" style="color:var(--green)">—</div><div class="lbl">Route B km</div></div></div>
+    <div><div class="compare-stat"><div class="val" id="cAeta">—</div><div class="lbl">Route A ETA</div></div></div>
+    <div><div class="compare-stat"><div class="val" id="cBeta">—</div><div class="lbl">Route B ETA</div></div></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const mapA = L.map('mapA').setView([27.7103, 85.3222], 12);
+const mapB = L.map('mapB').setView([27.7103, 85.3222], 12);
+const turl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const attr = '&copy; CartoDB &copy; OpenStreetMap';
+L.tileLayer(turl,{attribution:attr,subdomains:'abcd',maxZoom:19}).addTo(mapA);
+L.tileLayer(turl,{attribution:attr,subdomains:'abcd',maxZoom:19}).addTo(mapB);
+
+const csrf = ()=>document.cookie.split('; ').find(r=>r.startsWith('csrftoken='))?.split('=')[1]||'';
+let stateA={src:null,dst:null}, stateB={src:null,dst:null};
+let routeLA=null, routeLB=null;
+
+async function computeCmp(state, map, routeLayerRef, color, resultEl, prefix) {
+  if (!state.src || !state.dst) return;
+  resultEl.textContent = 'Computing…';
+  const r = await fetch('/api/route/', {
+    method:'POST', credentials:'same-origin',
+    headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},
+    body: JSON.stringify({src_lat:state.src.lat,src_lon:state.src.lon,
+      dst_lat:state.dst.lat,dst_lon:state.dst.lon,mode:'car',
+      src_name:state.src.name||'',dst_name:state.dst.name||''})
+  });
+  const j = await r.json();
+  if (j.status === 'success') {
+    if (routeLayerRef.current) map.removeLayer(routeLayerRef.current);
+    const lls = j.data.path_coords.map(c=>[c.lat,c.lon]);
+    routeLayerRef.current = L.polyline(lls,{color,weight:5,opacity:.85}).addTo(map);
+    map.fitBounds(routeLayerRef.current.getBounds(),{padding:[30,30]});
+    resultEl.innerHTML = `<span style="color:var(--accent2);font-weight:700">${j.data.total_distance_km} km</span> · ${j.data.eta_minutes} min · ${j.data.node_count} nodes`;
+    document.getElementById('c'+prefix+'km').textContent  = j.data.total_distance_km + ' km';
+    document.getElementById('c'+prefix+'eta').textContent = j.data.eta_minutes + ' min';
+    document.getElementById('comparePanel').style.display = 'grid';
+  } else {
+    resultEl.textContent = j.message || 'Error';
+  }
+}
+
+const refA = {current:null}, refB = {current:null};
+
+function setupSearch(inId, resId, state, key, map, ref, color, resEl, prefix) {
+  const input   = document.getElementById(inId);
+  const results = document.getElementById(resId);
+  buildSearchUI(input, results, p => {
+    state[key] = {lat:p.lat, lon:p.lon, name:p.name};
+    L.marker([p.lat,p.lon]).addTo(map).bindPopup(p.name);
+    map.setView([p.lat,p.lon],14);
+    if (state.src && state.dst) computeCmp(state,map,ref,color,resEl,prefix);
+  });
+}
+
+const aRes = document.getElementById('aResult');
+const bRes = document.getElementById('bResult');
+
+setupSearch('aSrcInput','aSrcResults',stateA,'src',mapA,refA,'#60a5fa',aRes,'A');
+setupSearch('aDstInput','aDstResults',stateA,'dst',mapA,refA,'#60a5fa',aRes,'A');
+setupSearch('bSrcInput','bSrcResults',stateB,'src',mapB,refB,'#34d399',bRes,'B');
+setupSearch('bDstInput','bDstResults',stateB,'dst',mapB,refB,'#34d399',bRes,'B');
+</script>
+{% endblock %}

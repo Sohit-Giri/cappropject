@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}RouteOptima{% endblock %}</title>
+  {% load static %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'routing/css/style.css' %}">
+  <script src="{% static 'routing/js/theme.js' %}"></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+{% block public %}
+{% if user.is_authenticated %}
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">&#9672;</div>
+      <div><div class="brand-title">RouteOptima</div><div class="brand-sub">Dijkstra SPF</div></div>
+    </div>
+    <nav>
+      <div class="nav-section">
+        <div class="nav-label">Main</div>
+        <a href="{% url 'dashboard' %}"  class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"><span class="nav-icon">⬡</span> Dashboard</a>
+        <a href="{% url 'map' %}"        class="nav-link {% if request.resolver_match.url_name == 'map' %}active{% endif %}"><span class="nav-icon">🗺</span> Route Map</a>
+        <a href="{% url 'compare' %}"    class="nav-link {% if request.resolver_match.url_name == 'compare' %}active{% endif %}"><span class="nav-icon">⇆</span> Compare</a>
+        <a href="{% url 'simulation' %}" class="nav-link {% if request.resolver_match.url_name == 'simulation' %}active{% endif %}"><span class="nav-icon">▶</span> Simulation</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Data</div>
+        <a href="{% url 'history' %}"    class="nav-link {% if request.resolver_match.url_name == 'history' %}active{% endif %}"><span class="nav-icon">⏱</span> History</a>
+        <a href="{% url 'analytics' %}"  class="nav-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}"><span class="nav-icon">📊</span> Analytics</a>
+        <a href="{% url 'favorites' %}"  class="nav-link {% if request.resolver_match.url_name == 'favorites' %}active{% endif %}"><span class="nav-icon">⭐</span> Favourites</a>
+        <a href="{% url 'export' %}"     class="nav-link {% if request.resolver_match.url_name == 'export' %}active{% endif %}"><span class="nav-icon">⬇</span> Export</a>
+        <a href="{% url 'report' %}"     class="nav-link {% if request.resolver_match.url_name == 'report' %}active{% endif %}"><span class="nav-icon">📄</span> Report</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Tools</div>
+        <a href="{% url 'heatmap' %}"     class="nav-link {% if request.resolver_match.url_name == 'heatmap' %}active{% endif %}"><span class="nav-icon">🔥</span> Heatmap</a>
+        <a href="{% url 'eta' %}"         class="nav-link {% if request.resolver_match.url_name == 'eta' %}active{% endif %}"><span class="nav-icon">⏩</span> ETA Calc</a>
+        <a href="{% url 'leaderboard' %}" class="nav-link {% if request.resolver_match.url_name == 'leaderboard' %}active{% endif %}"><span class="nav-icon">🏆</span> Leaderboard</a>
+        <a href="{% url 'benchmark' %}"   class="nav-link {% if request.resolver_match.url_name == 'benchmark' %}active{% endif %}"><span class="nav-icon">⚡</span> Benchmark</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">System</div>
+        <a href="{% url 'algorithm' %}"    class="nav-link {% if request.resolver_match.url_name == 'algorithm' %}active{% endif %}"><span class="nav-icon">⚙</span> Algorithm</a>
+        <a href="{% url 'graph' %}"        class="nav-link {% if request.resolver_match.url_name == 'graph' %}active{% endif %}"><span class="nav-icon">◉</span> Graph Info</a>
+        <a href="{% url 'nodes' %}"        class="nav-link {% if request.resolver_match.url_name == 'nodes' %}active{% endif %}"><span class="nav-icon">◦</span> Nodes</a>
+        <a href="{% url 'settings' %}"     class="nav-link {% if request.resolver_match.url_name == 'settings' %}active{% endif %}"><span class="nav-icon">⚙</span> Settings</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Info</div>
+        <a href="{% url 'about' %}"  class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}"><span class="nav-icon">ℹ</span> About</a>
+        <a href="{% url 'team' %}"   class="nav-link {% if request.resolver_match.url_name == 'team' %}active{% endif %}"><span class="nav-icon">👥</span> Team</a>
+        <a href="{% url 'docs' %}"   class="nav-link {% if request.resolver_match.url_name == 'docs' %}active{% endif %}"><span class="nav-icon">📚</span> Docs</a>
+        <a href="{% url 'help' %}"   class="nav-link {% if request.resolver_match.url_name == 'help' %}active{% endif %}"><span class="nav-icon">?</span> Help</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="{% url 'profile' %}" class="user-card">
+        <div class="user-avatar">{{ user.username|slice:":2"|upper }}</div>
+        <div><div class="user-name">{{ user.get_short_name|default:user.username }}</div><div class="user-role">{{ user.email|default:"User" }}</div></div>
+      </a>
+      <a href="{% url 'logout' %}" class="logout-btn" title="Logout">⏻</a>
+    </div>
+  </aside>
+  <div class="main-content">
+    {% if messages %}
+    <div class="messages">
+      {% for m in messages %}<div class="message {{ m.tags }}">{{ m }}</div>{% endfor %}
+    </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+{% else %}
+{% block public_content %}{% endblock %}
+{% endif %}
+{% endblock %}
+<script src="{% static 'routing/js/app.js' %}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

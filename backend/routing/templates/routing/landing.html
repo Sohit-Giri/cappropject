@@ -1,0 +1,74 @@
+{% extends 'routing/base.html' %}
+{% load static %}
+{% block title %}RouteOptima — Shortest Path Optimizer for Nepal{% endblock %}
+{% block public %}
+<nav class="landing-nav">
+  <a href="{% url 'landing' %}" class="landing-logo">
+    <div class="icon">&#9672;</div>
+    <div><div class="name">RouteOptima</div><div class="sub">Dijkstra SPF</div></div>
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'about' %}">About</a>
+    <a href="{% url 'docs' %}">Docs</a>
+    <a href="{% url 'team' %}">Team</a>
+    <a href="{% url 'help' %}">Help</a>
+  </div>
+  <div class="nav-actions">
+    <!-- Theme switcher in nav -->
+    <div style="display:flex;gap:.35rem;align-items:center;">
+      <div class="theme-dot" data-t="midnight" title="Midnight"></div>
+      <div class="theme-dot" data-t="obsidian" title="Obsidian"></div>
+      <div class="theme-dot" data-t="emerald"  title="Emerald"></div>
+      <div class="theme-dot" data-t="crimson"  title="Crimson"></div>
+      <div class="theme-dot" data-t="arctic"   title="Arctic"></div>
+      <div class="theme-dot" data-t="parchment" title="Light"></div>
+    </div>
+    <a href="{% url 'login' %}"    class="btn btn-ghost btn-sm">Log In</a>
+    <a href="{% url 'register' %}" class="btn btn-primary btn-sm">Get Started</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">🗺 Nepal Road Network · Dijkstra SPF · 5 Districts</div>
+  <h1>Find the <span>Shortest Route</span><br>Across the Valley</h1>
+  <p>RouteOptima uses Dijkstra's shortest-path algorithm on real OpenStreetMap data covering Kathmandu, Bhaktapur, Lalitpur, Nuwakot, and Dhading districts.</p>
+  <div class="hero-actions">
+    <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Start Routing Free</a>
+    <a href="{% url 'about' %}"    class="btn btn-ghost btn-lg">Learn More</a>
+  </div>
+</section>
+
+<div class="districts-section">
+  <h2>Coverage Districts</h2>
+  <p>Real road network data from OpenStreetMap — updated live.</p>
+  <div class="district-chips">
+    <span class="district-chip">📍 Kathmandu</span>
+    <span class="district-chip">📍 Bhaktapur</span>
+    <span class="district-chip">📍 Lalitpur</span>
+    <span class="district-chip">📍 Nuwakot</span>
+    <span class="district-chip">📍 Dhading</span>
+  </div>
+</div>
+
+<div class="stats-section">
+  <div class="s"><div class="val">5</div><div class="lbl">Districts Covered</div></div>
+  <div class="s"><div class="val">50K+</div><div class="lbl">Road Nodes</div></div>
+  <div class="s"><div class="val">Dijkstra</div><div class="lbl">Core Algorithm</div></div>
+  <div class="s"><div class="val">Free</div><div class="lbl">OSM Data</div></div>
+</div>
+
+<div class="features-grid">
+  <div class="feature-card"><div class="feature-icon">🔍</div><h3>Place Search</h3><p>Search any location by name — from a small tea shop to a large hospital. No need to know coordinates.</p></div>
+  <div class="feature-card"><div class="feature-icon">⚡</div><h3>Instant Routes</h3><p>Dijkstra's algorithm computes the optimal path in milliseconds across the entire graph.</p></div>
+  <div class="feature-card"><div class="feature-icon">⇆</div><h3>Route Comparison</h3><p>Run two different routes side-by-side and compare distance, ETA, and node count.</p></div>
+  <div class="feature-card"><div class="feature-icon">🚶 🚲 🚗</div><h3>Travel Modes</h3><p>Get estimated travel time for walking, cycling, or driving — automatically calculated.</p></div>
+  <div class="feature-card"><div class="feature-icon">⭐</div><h3>Saved Favourites</h3><p>Bookmark your most-used routes with custom labels and replay them anytime.</p></div>
+  <div class="feature-card"><div class="feature-icon">🔥</div><h3>Route Heatmap</h3><p>Visualise the busiest route endpoints across all users on an interactive heat map.</p></div>
+  <div class="feature-card"><div class="feature-icon">🔗</div><h3>Route Sharing</h3><p>Generate a unique shareable link for any computed route — no login needed to view.</p></div>
+  <div class="feature-card"><div class="feature-icon">🏆</div><h3>Leaderboard</h3><p>See which users have covered the most distance. Compete with your team members!</p></div>
+</div>
+
+<footer class="landing-footer">
+  <p>RouteOptima &copy; 2026 — IIMS College · Group 36 · Supervised by Nabeen Kumar Aryal</p>
+</footer>
+{% endblock %}

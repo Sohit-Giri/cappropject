@@ -1,0 +1,46 @@
+{% extends 'routing/base.html' %}
+{% block title %}Analytics — RouteOptima{% endblock %}
+{% block head %}<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>{% endblock %}
+{% block content %}
+<div class="page-header"><h1>📊 Analytics</h1><div class="desc">Your personal route statistics.</div></div>
+<div class="page-body">
+  <div class="stats-grid" id="statCards" style="margin-bottom:1.5rem">
+    <div class="stat-card blue"><div class="stat-icon">🗺</div><div class="stat-val" id="sTotal">—</div><div class="stat-lbl">Total Routes</div></div>
+    <div class="stat-card green"><div class="stat-icon">📏</div><div class="stat-val" id="sTotalKm">—</div><div class="stat-lbl">Total km</div></div>
+    <div class="stat-card yellow"><div class="stat-icon">⚡</div><div class="stat-val" id="sAvg">—</div><div class="stat-lbl">Avg km</div></div>
+    <div class="stat-card purple"><div class="stat-icon">◦</div><div class="stat-val" id="sNodes">—</div><div class="stat-lbl">Avg Nodes</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:1rem">
+    <div class="card"><div class="card-title">Routes Per Day (last 14 days)</div><canvas id="dailyChart" height="120"></canvas></div>
+    <div class="card"><div class="card-title">Distance Breakdown</div><canvas id="distChart" height="160"></canvas></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+fetch('/api/analytics/', {credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+  const s = d.stats;
+  document.getElementById('sTotal').textContent   = s.total || 0;
+  document.getElementById('sTotalKm').textContent = (s.total_dist||0).toFixed(1);
+  document.getElementById('sAvg').textContent     = (s.avg_dist||0).toFixed(2);
+  document.getElementById('sNodes').textContent   = Math.round(s.avg_nodes||0);
+
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#3b82f6';
+  const accent2= getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim()|| '#60a5fa';
+  const text3  = getComputedStyle(document.documentElement).getPropertyValue('--text3').trim()  || '#5a7aaa';
+
+  new Chart(document.getElementById('dailyChart'), {
+    type:'bar',
+    data:{labels:d.daily.map(x=>x.date.slice(5)),datasets:[{data:d.daily.map(x=>x.count),backgroundColor:accent+'44',borderColor:accent,borderWidth:2,borderRadius:4}]},
+    options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:text3}},y:{ticks:{color:text3,stepSize:1},beginAtZero:true}}}
+  });
+
+  const km = s.total_dist || 1;
+  new Chart(document.getElementById('distChart'), {
+    type:'doughnut',
+    data:{labels:['Computed','Goal 100km'],datasets:[{data:[Math.min(km,100),(100-Math.min(km,100))],backgroundColor:[accent,accent+'22'],borderWidth:0}]},
+    options:{plugins:{legend:{labels:{color:text3,font:{size:11}}}},cutout:'70%'}
+  });
+});
+</script>
+{% endblock %}

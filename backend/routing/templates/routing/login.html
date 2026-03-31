@@ -1,0 +1,36 @@
+{% extends 'routing/base.html' %}
+{% block title %}Log In — RouteOptima{% endblock %}
+{% block public %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">&#9672;</div>
+      <div class="auth-logo-text"><div class="t1">RouteOptima</div><div class="t2">Dijkstra SPF · Nepal</div></div>
+    </div>
+    <a href="{% url 'landing' %}" class="auth-back">← Back to Home</a>
+    <h2>Welcome back</h2>
+    <p class="sub">Log in to access your routes and analytics.</p>
+    {% if messages %}
+    <div class="msg-list">{% for m in messages %}<div class="msg {% if m.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ m }}</div>{% endfor %}</div>
+    {% endif %}
+    <form method="POST">
+      {% csrf_token %}
+      <div class="form-group"><label>Username</label><input type="text" name="username" required autofocus placeholder="your username"></div>
+      <div class="form-group"><label>Password</label><input type="password" name="password" required placeholder="••••••••"></div>
+      <button type="submit" class="btn btn-primary btn-full">Log In →</button>
+    </form>
+    <div class="auth-footer">Don't have an account? <a href="{% url 'register' %}">Sign up free</a></div>
+    <div style="margin-top:.75rem;text-align:center;">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:.5rem;">Choose theme</div>
+      <div style="display:flex;gap:.4rem;justify-content:center;">
+        <div class="theme-dot" data-t="midnight" title="Midnight"></div>
+        <div class="theme-dot" data-t="obsidian" title="Obsidian"></div>
+        <div class="theme-dot" data-t="emerald"  title="Emerald"></div>
+        <div class="theme-dot" data-t="crimson"  title="Crimson"></div>
+        <div class="theme-dot" data-t="arctic"   title="Arctic"></div>
+        <div class="theme-dot" data-t="parchment" title="Light"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

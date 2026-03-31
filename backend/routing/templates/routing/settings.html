@@ -1,0 +1,52 @@
+{% extends 'routing/base.html' %}
+{% block title %}Settings — RouteOptima{% endblock %}
+{% block content %}
+<div class="page-header"><h1>⚙ Settings</h1><div class="desc">Customise your RouteOptima experience.</div></div>
+<div class="page-body">
+  <div style="max-width:560px">
+    {% if messages %}{% for m in messages %}<div class="message {{ m.tags }}">{{ m }}</div>{% endfor %}{% endif %}
+    <form method="POST">
+      {% csrf_token %}
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-title">Appearance Theme</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:1rem">Choose your preferred colour scheme. This is saved to your account and synced across devices.</p>
+        <div class="theme-switcher">
+          <div class="theme-dot {% if pref.theme == 'midnight' %}selected{% endif %}" data-t="midnight" title="Midnight"></div>
+          <div class="theme-dot {% if pref.theme == 'obsidian' %}selected{% endif %}" data-t="obsidian" title="Obsidian"></div>
+          <div class="theme-dot {% if pref.theme == 'emerald'  %}selected{% endif %}" data-t="emerald"  title="Emerald"></div>
+          <div class="theme-dot {% if pref.theme == 'crimson'  %}selected{% endif %}" data-t="crimson"  title="Crimson"></div>
+          <div class="theme-dot {% if pref.theme == 'arctic'   %}selected{% endif %}" data-t="arctic"   title="Arctic"></div>
+          <div class="theme-dot {% if pref.theme == 'parchment' %}selected{% endif %}" data-t="parchment" title="Light"></div>
+        </div>
+        <div style="margin-top:.75rem;font-size:12px;color:var(--text3)">
+          Midnight · Obsidian · Emerald · Crimson · Arctic · Parchment (light)
+        </div>
+        <input type="hidden" name="theme" id="themeInput" value="{{ pref.theme }}">
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-title">Default Travel Mode</div>
+        <div class="form-group">
+          <label>Mode used when computing routes</label>
+          <select name="speed_mode">
+            <option value="walk" {% if pref.speed_mode == 'walk' %}selected{% endif %}>🚶 Walking (5 km/h)</option>
+            <option value="bike" {% if pref.speed_mode == 'bike' %}selected{% endif %}>🚲 Bicycle (15 km/h)</option>
+            <option value="car"  {% if pref.speed_mode == 'car'  %}selected{% endif %}>🚗 Car (40 km/h)</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Save Settings</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('.theme-dot').forEach(d=>{
+  d.addEventListener('click',()=>{
+    document.getElementById('themeInput').value = d.dataset.t;
+  });
+});
+</script>
+{% endblock %}

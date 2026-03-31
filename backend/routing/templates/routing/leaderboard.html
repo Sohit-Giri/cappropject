@@ -1,0 +1,33 @@
+{% extends 'routing/base.html' %}
+{% block title %}Leaderboard — RouteOptima{% endblock %}
+{% block content %}
+<div class="page-header"><h1>🏆 Leaderboard</h1><div class="desc">Top users by total distance computed.</div></div>
+<div class="page-body">
+  <div id="board" style="max-width:600px">
+    <div style="text-align:center;color:var(--text3);padding:2rem">Loading…</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const medals = ['🥇','🥈','🥉'];
+fetch('/api/leaderboard-data/', {credentials:'same-origin'})
+  .then(r=>r.json()).then(d=>{
+    const board = document.getElementById('board');
+    if (!d.leaderboard || !d.leaderboard.length) {
+      board.innerHTML = '<div class="card" style="text-align:center;padding:2rem;color:var(--text2)">No data yet — be the first!</div>';
+      return;
+    }
+    board.innerHTML = '';
+    d.leaderboard.forEach((u, i) => {
+      board.innerHTML += `
+        <div class="leaderboard-row">
+          <div class="leaderboard-rank">${medals[i] || (i+1)}</div>
+          <div class="leaderboard-name">${u.user__username}</div>
+          <div class="leaderboard-km">${(u.total_km||0).toFixed(2)} km</div>
+          <div class="leaderboard-routes">${u.routes} routes</div>
+        </div>`;
+    });
+  });
+</script>
+{% endblock %}

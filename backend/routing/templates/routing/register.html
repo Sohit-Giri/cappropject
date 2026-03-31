@@ -1,0 +1,30 @@
+{% extends 'routing/base.html' %}
+{% block title %}Register — RouteOptima{% endblock %}
+{% block public %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">&#9672;</div>
+      <div class="auth-logo-text"><div class="t1">RouteOptima</div><div class="t2">Dijkstra SPF · Nepal</div></div>
+    </div>
+    <a href="{% url 'landing' %}" class="auth-back">← Back to Home</a>
+    <h2>Create account</h2>
+    <p class="sub">Join RouteOptima and start optimising routes.</p>
+    {% if messages %}
+    <div class="msg-list">{% for m in messages %}<div class="msg {% if m.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ m }}</div>{% endfor %}</div>
+    {% endif %}
+    <form method="POST">
+      {% csrf_token %}
+      <div class="form-group"><label>First Name</label><input type="text" name="first_name" placeholder="Your first name"></div>
+      <div class="form-group"><label>Username</label><input type="text" name="username" required autofocus placeholder="choose a username"></div>
+      <div class="form-group"><label>Email</label><input type="email" name="email" placeholder="for welcome email"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Password</label><input type="password" name="password1" required placeholder="min 6 chars"></div>
+        <div class="form-group"><label>Confirm</label><input type="password" name="password2" required placeholder="repeat"></div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">Create Account →</button>
+    </form>
+    <div class="auth-footer">Already have an account? <a href="{% url 'login' %}">Log in</a></div>
+  </div>
+</div>
+{% endblock %}

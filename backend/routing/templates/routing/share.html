@@ -1,0 +1,41 @@
+{% extends 'routing/base.html' %}
+{% load static %}
+{% block title %}Shared Route — RouteOptima{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+{% block public %}
+<nav class="landing-nav">
+  <a href="{% url 'landing' %}" class="landing-logo"><div class="icon">&#9672;</div><div><div class="name">RouteOptima</div></div></a>
+  <div class="nav-actions">
+    <a href="{% url 'login' %}" class="btn btn-ghost btn-sm">Log In</a>
+    <a href="{% url 'register' %}" class="btn btn-primary btn-sm">Sign Up Free</a>
+  </div>
+</nav>
+<div style="padding:5rem 2rem 2rem;max-width:900px;margin:0 auto">
+  <div class="card" style="margin-bottom:1rem">
+    <div style="font-size:18px;font-weight:800;margin-bottom:.5rem">🔗 Shared Route</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:.75rem">
+      <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;font-weight:700">From</div><div style="font-weight:600">{{ route.src_name|default:"Point A" }}</div></div>
+      <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;font-weight:700">To</div><div style="font-weight:600">{{ route.dst_name|default:"Point B" }}</div></div>
+      <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;font-weight:700">Distance</div><div style="font-weight:800;color:var(--accent2)">{{ route.path_distance_km }} km</div></div>
+    </div>
+  </div>
+  <div style="height:450px;border-radius:12px;overflow:hidden;border:1px solid var(--border)">
+    <div id="shareMap" style="width:100%;height:100%"></div>
+  </div>
+  <div style="text-align:center;margin-top:1.5rem">
+    <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Create Your Own Routes →</a>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const m = L.map('shareMap').setView([{{ route.src_lat }}, {{ route.src_lon }}], 13);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(m);
+L.marker([{{ route.src_lat }}, {{ route.src_lon }}]).addTo(m).bindPopup('Start').openPopup();
+L.marker([{{ route.dst_lat }}, {{ route.dst_lon }}]).addTo(m).bindPopup('End');
+L.polyline([[{{ route.src_lat }},{{ route.src_lon }}],[{{ route.dst_lat }},{{ route.dst_lon }}]],{color:'#3b82f6',weight:4,opacity:.8,dashArray:'8 4'}).addTo(m);
+</script>
+{% endblock %}
