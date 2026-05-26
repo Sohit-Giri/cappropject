@@ -15,6 +15,7 @@ class RouteLog(models.Model):
     dst_node         = models.BigIntegerField()
     path_distance_m  = models.FloatField()
     path_distance_km = models.FloatField()
+    path_coords      = models.TextField(null=True, blank=True)
     node_count       = models.IntegerField()
     computed_at      = models.DateTimeField(auto_now_add=True)
     share_token      = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, null=True)

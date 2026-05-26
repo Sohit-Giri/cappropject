@@ -4,72 +4,168 @@
 {% block head %}
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    /* Clean Layout for Simulation */
+    .sim-container { display: flex; height: calc(100vh - 70px); padding: 1rem; gap: 1rem; background: var(--bg); }
+    .sim-panel { width: 320px; background: var(--surface); border-radius: 16px; border: 1px solid var(--border); padding: 1.5rem; display: flex; flex-direction: column; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+    .sim-map-wrap { flex: 1; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); position: relative; }
+    
+    /* Remove bulkiness from map markers */
+    .leaflet-marker-icon { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+    .sim-hint-toast { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #222; color: #fff; padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 500; display: none; }
+  </style>
 {% endblock %}
+
 {% block content %}
-<div class="page-header"><h1>▶ Route Simulation</h1><div class="desc">Animate a vehicle travelling a computed route.</div></div>
-<div style="display:flex;height:calc(100vh - 130px);padding:0 1.75rem 1rem;gap:1rem">
-  <div class="map-panel" style="border-radius:12px;border:1px solid var(--border)">
-    <div class="card-title">Compute Route First</div>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Search or click map to pick start and end, then simulate.</p>
-    <div class="place-search-wrap"><span class="place-search-icon">🔍</span>
-      <input id="simSrc" class="place-search-input" type="text" placeholder="Start" autocomplete="off">
-      <div id="simSrcRes" class="place-results" style="display:none"></div></div>
-    <div class="place-search-wrap" style="margin-top:.5rem"><span class="place-search-icon">🔍</span>
+<div class="sim-container">
+  <div class="sim-panel">
+    <div class="card-title" style="font-size: 1.2rem; margin-bottom: 0.5rem;">▶ Route Simulation</div>
+    <p style="font-size: 13px; color: var(--text2); margin-bottom: 1rem;">Pick points via search or map click.</p>
+
+    <div class="place-search-wrap">
+      <input id="simSrc" class="place-search-input" type="text" placeholder="Start Location" autocomplete="off">
+      <div id="simSrcRes" class="place-results" style="display:none"></div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="clicking='src';showToast('Click map to set Start')">📌 Pick on Map</button>
+
+    <div class="place-search-wrap" style="margin-top: 1rem;">
       <input id="simDst" class="place-search-input" type="text" placeholder="Destination" autocomplete="off">
-      <div id="simDstRes" class="place-results" style="display:none"></div></div>
-    <button class="btn btn-primary btn-sm" style="width:100%;margin-top:.75rem" onclick="simRoute()">Compute</button>
-    <div id="simStatus" style="font-size:12px;color:var(--text3);margin-top:.5rem"></div>
-    <button id="simPlay" class="btn btn-secondary btn-sm" style="width:100%;margin-top:.5rem;display:none" onclick="playSimulation()">▶ Start Simulation</button>
-    <div style="margin-top:.75rem" id="speedRow" style="display:none">
-      <label style="font-size:11px;color:var(--text3)">Speed</label>
-      <input type="range" id="simSpeed" min="1" max="10" value="5" style="width:100%;accent-color:var(--accent)">
+      <div id="simDstRes" class="place-results" style="display:none"></div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="clicking='dst';showToast('Click map to set Destination')">📌 Pick on Map</button>
+
+    <hr style="border:0; border-top:1px solid var(--border); margin: 1.5rem 0;">
+
+    <button class="btn btn-primary" style="width:100%" onclick="simRoute()">Compute Route</button>
+    <div id="simStatus" style="font-size:12px; color:var(--text3); margin-top:0.75rem; text-align:center;"></div>
+
+    <div id="playbackControls" style="display:none; margin-top:1rem;">
+        <button id="simPlay" class="btn btn-secondary" style="width:100%" onclick="playSimulation()">▶ Start Playback</button>
+        <div style="margin-top:1.25rem">
+          <label style="font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.5px;">Speed Control</label>
+          <input type="range" id="simSpeed" min="1" max="15" value="5" style="width:100%; margin-top:5px;">
+        </div>
     </div>
   </div>
-  <div style="flex:1;border-radius:12px;overflow:hidden;border:1px solid var(--border)">
-    <div id="simMap" style="width:100%;height:100%"></div>
+
+  <div class="sim-map-wrap">
+    <div id="simMap" style="width:100%; height:100%"></div>
+    <div id="simHint" class="sim-hint-toast"></div>
   </div>
 </div>
 {% endblock %}
+
 {% block scripts %}
 <script>
-const smap = L.map('simMap').setView([27.7103,85.3222],12);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(smap);
-let simPath=[], simLine=null, simMarker=null, animFrame=null;
-let simSrc=null, simDst=null;
+// "Google Maps" Style Tile Provider: Carto Voyager
+const smap = L.map('simMap', { zoomControl: false }).setView([27.7103, 85.3222], 13);
+L.control.zoom({ position: 'bottomright' }).addTo(smap);
 
-buildSearchUI(document.getElementById('simSrc'),document.getElementById('simSrcRes'),p=>{simSrc=p;});
-buildSearchUI(document.getElementById('simDst'),document.getElementById('simDstRes'),p=>{simDst=p;});
+// This layer is clean, high-detail, and works perfectly in white theme
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    subdomains: 'abcd',
+    maxZoom: 20
+}).addTo(smap);
+
+let simPath=[], simLine=null, simMarker=null, animFrame=null;
+let simSrc=null, simDst=null, clicking=null;
+let m1=null, m2=null;
+
+// Handle Reverse Geocoding (Lat/Lon -> Name)
+async function getPlaceName(lat, lon) {
+    try {
+        const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=en`);
+        const d = await r.json();
+        return d.name || d.display_name?.split(',')[0] || `Point (${lat.toFixed(4)})`;
+    } catch { return `Point (${lat.toFixed(4)})`; }
+}
+
+function showToast(msg) {
+    const t = document.getElementById('simHint');
+    t.textContent = msg; t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+// Map Click Interaction
+smap.on('click', async (e) => {
+    if(!clicking) return;
+    const lat = e.latlng.lat;
+    const lon = e.latlng.lng;
+    
+    showToast("Finding place name...");
+    const name = await getPlaceName(lat, lon);
+    
+    const p = { lat, lon, name };
+    if(clicking === 'src') {
+        simSrc = p;
+        document.getElementById('simSrc').value = name;
+    } else {
+        simDst = p;
+        document.getElementById('simDst').value = name;
+    }
+    updateMarkers();
+    clicking = null;
+});
+
+function updateMarkers() {
+    if(m1) smap.removeLayer(m1); if(m2) smap.removeLayer(m2);
+    if(simSrc) m1 = L.circleMarker([simSrc.lat, simSrc.lon], {color:'#10b981', fillOpacity:1, radius:7, weight:2, fillColor:'#fff'}).addTo(smap);
+    if(simDst) m2 = L.circleMarker([simDst.lat, simDst.lon], {color:'#ef4444', fillOpacity:1, radius:7, weight:2, fillColor:'#fff'}).addTo(smap);
+}
+
+// Search UI Integration (Ensure buildSearchUI is in your app.js)
+if(typeof buildSearchUI === 'function'){
+    buildSearchUI(document.getElementById('simSrc'), document.getElementById('simSrcRes'), p => { simSrc=p; updateMarkers(); });
+    buildSearchUI(document.getElementById('simDst'), document.getElementById('simDstRes'), p => { simDst=p; updateMarkers(); });
+}
 
 async function simRoute(){
-  if(!simSrc||!simDst){document.getElementById('simStatus').textContent='Please select both points.';return;}
-  document.getElementById('simStatus').textContent='Computing…';
-  const csrf=document.cookie.split('; ').find(r=>r.startsWith('csrftoken='))?.split('=')[1]||'';
-  const r=await fetch('/api/route/',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRFToken':csrf},
-    body:JSON.stringify({src_lat:simSrc.lat,src_lon:simSrc.lon,dst_lat:simDst.lat,dst_lon:simDst.lon,mode:'car',src_name:simSrc.name,dst_name:simDst.name})});
-  const j=await r.json();
-  if(j.status!=='success'){document.getElementById('simStatus').textContent=j.message;return;}
-  simPath=j.data.path_coords.map(c=>[c.lat,c.lon]);
-  if(simLine)smap.removeLayer(simLine);
-  simLine=L.polyline(simPath,{color:'#3b82f6',weight:4,opacity:.5}).addTo(smap);
-  smap.fitBounds(simLine.getBounds(),{padding:[40,40]});
-  document.getElementById('simStatus').textContent=`Route ready — ${j.data.total_distance_km} km`;
-  document.getElementById('simPlay').style.display='block';
-  document.getElementById('speedRow').style.display='block';
+  if(!simSrc || !simDst){ showToast('Select both points first'); return; }
+  document.getElementById('simStatus').textContent = 'Computing optimal path...';
+  
+  const csrf = document.cookie.split('; ').find(r => r.startsWith('csrftoken='))?.split('=')[1] || '';
+  const r = await fetch('/api/route/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+    body: JSON.stringify({ src_lat: simSrc.lat, src_lon: simSrc.lon, dst_lat: simDst.lat, dst_lon: simDst.lon, mode: 'car' })
+  });
+  
+  const j = await r.json();
+  if(j.status !== 'success'){ document.getElementById('simStatus').textContent = j.message; return; }
+  
+  simPath = j.data.path_coords.map(c => [c.lat, c.lon]);
+  if(simLine) smap.removeLayer(simLine);
+  simLine = L.polyline(simPath, {color: '#3b82f6', weight: 5, opacity: 0.7, lineCap: 'round'}).addTo(smap);
+  smap.fitBounds(simLine.getBounds(), {padding: [50, 50]});
+  
+  document.getElementById('simStatus').textContent = `Ready: ${j.data.total_distance_km} km`;
+  document.getElementById('playbackControls').style.display = 'block';
 }
 
 function playSimulation(){
-  if(!simPath.length)return;
+  if(!simPath.length) return;
   cancelAnimationFrame(animFrame);
-  if(simMarker)smap.removeLayer(simMarker);
-  simMarker=L.marker(simPath[0]).addTo(smap);
-  let idx=0;
-  const speed=()=>parseInt(document.getElementById('simSpeed').value);
+  if(simMarker) smap.removeLayer(simMarker);
+  
+  // Custom Car Emoji Marker
+  const carIcon = L.divIcon({
+      html: '<div style="font-size:26px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3))">🚗</div>',
+      className: 'dummy', iconSize: [30, 30], iconAnchor: [15, 15]
+  });
+  
+  simMarker = L.marker(simPath[0], {icon: carIcon}).addTo(smap);
+  let idx = 0;
+  
   function step(){
-    idx=Math.min(idx+speed(),simPath.length-1);
+    const speed = parseInt(document.getElementById('simSpeed').value);
+    idx = Math.min(idx + speed, simPath.length - 1);
     simMarker.setLatLng(simPath[idx]);
-    if(idx<simPath.length-1)animFrame=requestAnimationFrame(step);
+    if(idx < simPath.length - 1) animFrame = requestAnimationFrame(step);
   }
   step();
 }
+
+// Final Fix for "Gray Map"
+setTimeout(() => { smap.invalidateSize(); }, 500);
 </script>
 {% endblock %}

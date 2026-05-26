@@ -297,6 +297,7 @@ class RouteAPIView(APIView):
         if result is None:
             return Response({'status': 'error',
                              'message': 'No drivable path found between these points.'}, status=404)
+        path_json = json.dumps(result.get('path_coords', []))
         log = RouteLog.objects.create(
             user=request.user,
             src_name=d.get('src_name',''), dst_name=d.get('dst_name',''),
@@ -306,6 +307,7 @@ class RouteAPIView(APIView):
             path_distance_m=result['total_distance_meters'],
             path_distance_km=result['total_distance_km'],
             node_count=result['node_count'],
+            path_coords=path_json
         )
         result['route_id']    = log.id
         result['share_token'] = str(log.share_token)

@@ -8,19 +8,28 @@ const map = L.map('map', { zoomControl: false }).setView([27.7103, 85.3222], 12)
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
 // Tile layer switcher — dark default
-let tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+// --- UPDATED TILE LOGIC ---
+// Use Voyager: It works perfectly for both Light and Dark themes
+let tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+
 const tileLayer = L.tileLayer(tileUrl, {
-  attribution: '&copy; CartoDB &copy; OpenStreetMap',
-  subdomains: 'abcd', maxZoom: 19,
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  subdomains: 'abcd', 
+  maxZoom: 20,
 }).addTo(map);
 
-// Theme → tile auto-switch
+// Theme → tile auto-switch fix
 (function () {
   const t = localStorage.getItem('ro_theme') || 'midnight';
-  if (t === 'parchment') {
-    tileLayer.setUrl('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+  // If the theme is arctic (white), we keep the clean Voyager look.
+  // If midnight, we use the Dark Matter tiles.
+  if (t === 'midnight') {
+    tileLayer.setUrl('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
+  } else {
+    tileLayer.setUrl('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
   }
 })();
+// ---------------------------
 
 let src = null, dst = null, srcM = null, dstM = null, routeL = null;
 let clicking = null; // null = not in click mode; 'src' or 'dst'

@@ -6,7 +6,7 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-routeoptima-v2-dev-key-2026')
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.vercel.app']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -51,10 +51,10 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME':     os.environ.get('DB_NAME',     'fyp_n7gx'),
-        'USER':     os.environ.get('DB_USER',     'fyp_n7gx_user'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'F3bhOrPukM6SmdkauOWuuFstRSsUArBN'),
-        'HOST':     os.environ.get('DB_HOST',     'dpg-d75pgdp4tr6s73cbra3g-a.ohio-postgres.render.com'),
+        'NAME':     os.environ.get('DB_NAME',     'fyp_capstone'),
+        'USER':     os.environ.get('DB_USER',     'fyp_capstone_user'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'gaYIiKnJ4426UuLs0fy7cJPywm8FilA9'),
+        'HOST':     os.environ.get('DB_HOST',     'dpg-d8a45lmgvqtc73cgovu0-a.ohio-postgres.render.com'),
         'PORT':     os.environ.get('DB_PORT',     '5432'),
     }
 }
@@ -81,10 +81,6 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 GRAPH_DISTRICTS = [
     'Kathmandu, Bagmati Province, Nepal',
-    'Bhaktapur, Bagmati Province, Nepal',
-    'Lalitpur, Bagmati Province, Nepal',
-    'Nuwakot, Bagmati Province, Nepal',
-    'Dhading, Bagmati Province, Nepal',
 ]
 GRAPH_CACHE_DIR = BASE_DIR / 'graph_cache'
 
