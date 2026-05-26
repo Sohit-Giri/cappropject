@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "core/wsgi.py",
+      "src": "backend/core/wsgi.py",
       "use": "@vercel/python",
       "config": {
         "maxDuration": 60,
@@ -13,11 +13,11 @@
   "routes": [
     {
       "src": "/static/(.*)",
-      "dest": "core/wsgi.py"
+      "dest": "backend/core/wsgi.py"
     },
     {
       "src": "/(.*)",
-      "dest": "core/wsgi.py"
+      "dest": "backend/core/wsgi.py"
     }
   ]
 }
