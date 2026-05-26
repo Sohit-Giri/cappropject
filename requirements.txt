@@ -8,3 +8,4 @@ scipy>=1.11
 python-dotenv>=1.0
 gunicorn>=21.2
 whitenoise>=6.6
+scikit-learn
