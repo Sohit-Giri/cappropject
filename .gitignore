@@ -5,7 +5,11 @@ __pycache__/
 db.sqlite3
 *.env
 .env
-graph_cache/
+
+backend/graph_cache/
+!backend/graph_cache/kathmandu_nepal.graphml
+!backend/graph_cache/kathmandu_bagmati_province_nepal.graphml
+
 staticfiles/
 media/
 node_modules/
