@@ -11,6 +11,8 @@ ALLOWED_HOSTS = [
     '.vercel.app',          # Catch-all rule for your preview links
     '127.0.0.1',
     'localhost',
+    "sohitgiri.com.np",
+    "www.sohitgiri.com.np",
 ]
 INSTALLED_APPS = [
     'django.contrib.admin',
