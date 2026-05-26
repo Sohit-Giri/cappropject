@@ -276,27 +276,49 @@ class RouteAPIView(APIView):
         ser = RouteRequestSerializer(data=request.data)
         if not ser.is_valid():
             return Response({'status': 'error', 'errors': ser.errors}, status=400)
+            
         gm = GraphManager.get_instance()
+        
+        # LAZY LOAD TRAP: If Vercel recycled the container, load it on-demand right now!
         if not gm.is_loaded():
-            return Response({'status': 'error',
-                             'message': 'Graph loading. Retry shortly.'}, status=503)
+            try:
+                from django.conf import settings
+                print("Lazy loading graph data from disk inside view process...")
+                gm.load_districts(settings.GRAPH_DISTRICTS)
+            except Exception as e:
+                return Response({
+                    'status': 'error', 
+                    'message': f'Server failed to load maps from disk: {str(e)}'
+                }, status=500)
+                
+        # Re-verify if loading succeeded
+        if not gm.is_loaded():
+            return Response({
+                'status': 'error',
+                'message': 'Graph asset data could not be allocated in container memory.'
+            }, status=503)
+            
         d = ser.validated_data
         try:
             sn = gm.get_nearest_node(d['src_lat'], d['src_lon'])
             dn = gm.get_nearest_node(d['dst_lat'], d['dst_lon'])
         except Exception as e:
             return Response({'status': 'error', 'message': str(e)}, status=400)
+            
         if sn == dn:
             return Response({'status': 'error',
                              'message': 'Source and destination are too close.'}, status=400)
+                             
         engine = RouteEngine()
         try:
             result = engine.compute_shortest_path(sn, dn, mode=d.get('mode','car'))
         except (ValueError, RuntimeError) as e:
             return Response({'status': 'error', 'message': str(e)}, status=400)
+            
         if result is None:
             return Response({'status': 'error',
                              'message': 'No drivable path found between these points.'}, status=404)
+                             
         path_json = json.dumps(result.get('path_coords', []))
         log = RouteLog.objects.create(
             user=request.user,
@@ -322,6 +344,12 @@ class GraphInfoAPIView(APIView):
 class HealthAPIView(APIView):
     def get(self, request):
         gm = GraphManager.get_instance()
+        if not gm.is_loaded():
+            from django.conf import settings
+            try:
+                gm.load_districts(settings.GRAPH_DISTRICTS)
+            except Exception:
+                pass
         return Response({
             'status': 'ready' if gm.is_loaded() else 'loading',
             'graph':  gm.get_info(),

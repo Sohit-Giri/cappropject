@@ -18,10 +18,15 @@ class GraphManager:
         return cls._instance
 
     def load_districts(self, districts, cache_dir=None):
+        # Prevent reloading if graph already exists in memory
+        if self._graph is not None:
+            logger.info("Graph already loaded in this instance memory.")
+            return self._graph
+
         import osmnx as ox
         from django.conf import settings
 
-        # Force the absolute path configured in settings.py
+        # Force use of absolute configuration directory from settings.py
         if cache_dir is None:
             cache_dir = str(settings.GRAPH_CACHE_DIR)
 
@@ -30,6 +35,9 @@ class GraphManager:
         graphs = []
 
         for place in districts:
+            # Example:
+            # Kathmandu, Bagmati Province, Nepal
+            # -> kathmandu_bagmati_province_nepal
             safe = (
                 place.replace(",", "")
                 .replace(" ", "_")
@@ -38,39 +46,36 @@ class GraphManager:
             )
 
             path = os.path.join(cache_dir, f"{safe}.graphml")
-
-            # Fallback path if filename differs
             fallback_path = os.path.join(
                 cache_dir,
                 "kathmandu_nepal.graphml"
             )
 
             try:
-                # 1. Exact cached graph
                 if os.path.exists(path):
-                    logger.info(
-                        f"Loading cached absolute path: {path}"
-                    )
+                    print(f"LOADING ABSOLUTE CACHE FILE: {path}")
+                    logger.info(f"Loading cached graph: {path}")
                     g = ox.load_graphml(path)
 
-                # 2. Kathmandu fallback graph
-                elif (
-                    "kathmandu" in safe
-                    and os.path.exists(fallback_path)
-                ):
+                elif os.path.exists(fallback_path):
+                    print(
+                        f"LOADING FALLBACK CACHE FILE: "
+                        f"{fallback_path}"
+                    )
                     logger.info(
-                        f"Using fallback absolute cache: "
+                        f"Using fallback graph: "
                         f"{fallback_path}"
                     )
                     g = ox.load_graphml(fallback_path)
 
-                # 3. Do NOT attempt download on Vercel
                 else:
-                    logger.error(
-                        f"Graph missing on disk at: {path}"
+                    print(
+                        f"ERROR: Graph file not found on disk at: "
+                        f"{path}"
                     )
+
                     raise FileNotFoundError(
-                        f"Map data not bundled in deployment for {place}"
+                        f"Missing map file for {place}"
                     )
 
                 graphs.append(g)
@@ -82,11 +87,14 @@ class GraphManager:
                 )
 
             except Exception as e:
-                # Force output into Vercel logs
                 print(
-                    f"CRITICAL GRAPH ERROR for {place}: {str(e)}"
+                    f"CRITICAL INITIALIZATION EXCEPTION: "
+                    f"{str(e)}"
                 )
-                logger.warning(f"Skipping {place}: {e}")
+
+                logger.warning(
+                    f"Skipping {place}: {e}"
+                )
 
         if graphs:
             self._graph = (
@@ -100,10 +108,14 @@ class GraphManager:
                 f"{len(self._graph.nodes)} nodes, "
                 f"{len(self._graph.edges)} edges"
             )
-        else:
-            logger.error(
-                "No district graphs could be loaded!"
-            )
+
+            return self._graph
+
+        logger.error(
+            "No district graphs could be loaded!"
+        )
+
+        return None
 
     def get_nearest_node(self, lat, lon):
         import osmnx as ox
