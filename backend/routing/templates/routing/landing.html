@@ -1,7 +1,176 @@
 {% extends 'routing/base.html' %}
 {% load static %}
-{% block title %}RouteOptima — Shortest Path Optimizer for Nepal{% endblock %}
+{% block title %}RouteOptima — Shortest Path Optimizer for Kathmandu{% endblock %}
+
 {% block public %}
+<style>
+  /* Keep your existing .single-district-container and .district-chip elements here */
+  .single-district-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .district-chip.primary-focus {
+    background: linear-gradient(135deg, var(--bg3), var(--bg2));
+    border: 2px solid var(--accent);
+    color: var(--text1);
+    font-size: 16px;
+    padding: .6rem 1.75rem;
+    box-shadow: 0 0 20px var(--card-glow);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .coverage-meta-text {
+    font-size: 13px;
+    color: var(--text3);
+    max-width: 500px;
+    line-height: 1.5;
+  }
+
+  /* ==========================================================================
+     NEW MOBILE RESPONSIVE ADAPTATIONS
+     ========================================================================== */
+  @media (max-width: 768px) {
+    .landing-nav {
+      padding: 0.75rem 1rem;
+      flex-direction: column;
+      gap: 0.75rem;
+      position: relative; /* Prevents hero section content from sliding under navigation on mobile */
+    }
+
+    .nav-links {
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .nav-links a {
+      font-size: 13px;
+    }
+
+    .nav-actions {
+      width: 100%;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--border);
+      padding-top: 0.5rem;
+    }
+
+    .hero {
+      min-height: auto;
+      padding: 3rem 1rem 3rem;
+    }
+
+    .hero h1 {
+      font-size: 1.8rem;
+      letter-spacing: -0.5px;
+    }
+    
+    .hero p {
+      font-size: 0.95rem;
+      margin-bottom: 1.75rem;
+    }
+
+    /* Stack stats into two columns on compact phone configurations */
+    .stats-section {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    .stats-section .s {
+      padding: 1.25rem 0.5rem;
+    }
+
+    .stats-section .s .val {
+      font-size: 1.5rem;
+    }
+  }
+  /* Dynamic Dashboard Workspace Transformations */
+  @media (max-width: 991px) {
+    .app-layout {
+      flex-direction: column;
+      height: auto;
+      overflow: visible;
+    }
+
+    .sidebar {
+      width: 100% !important;
+      height: auto;
+      position: relative;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-brand {
+      justify-content: center;
+    }
+
+    .nav-section {
+      display: flex;
+      flex-direction: row;
+      overflow-x: auto;
+      padding: 0.5rem;
+      white-space: nowrap;
+      gap: 0.5rem;
+    }
+
+    .nav-label {
+      display: none; /* Converted to compact icon strip structure for space saving */
+    }
+
+    .nav-link {
+      border-left: none !important;
+      border-bottom: 3px solid transparent;
+      border-radius: 6px !important;
+      padding: 0.5rem 0.85rem;
+      margin: 0;
+    }
+
+    .nav-link.active {
+      border-bottom-color: var(--accent);
+    }
+
+    .sidebar-footer {
+      padding: 0.75rem 1rem;
+      justify-content: space-between;
+    }
+
+    .main-content {
+      height: auto;
+      overflow: visible;
+    }
+    
+    /* Adapt dashboard stat metrics */
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 0.75rem !important;
+    }
+    
+    /* Ensure auth login blocks fit nicely inside alternative viewports */
+    .auth-card {
+      width: 92% !important;
+      max-width: 440px;
+      padding: 1.75rem !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .stats-grid {
+      grid-template-columns: 1fr !important;
+    }
+    
+    .form-row {
+      grid-template-columns: 1fr !important;
+    }
+  }
+</style>
+
 <nav class="landing-nav">
   <a href="{% url 'landing' %}" class="landing-logo">
     <div class="icon">&#9672;</div>
@@ -14,7 +183,6 @@
     <a href="{% url 'help' %}">Help</a>
   </div>
   <div class="nav-actions">
-    <!-- Theme switcher in nav -->
     <div style="display:flex;gap:.35rem;align-items:center;">
       <div class="theme-dot" data-t="midnight" title="Midnight"></div>
       <div class="theme-dot" data-t="obsidian" title="Obsidian"></div>
@@ -29,9 +197,9 @@
 </nav>
 
 <section class="hero">
-  <div class="hero-badge">🗺 Nepal Road Network · Dijkstra SPF · 5 Districts</div>
-  <h1>Find the <span>Shortest Route</span><br>Across the Valley</h1>
-  <p>RouteOptima uses Dijkstra's shortest-path algorithm on real OpenStreetMap data covering Kathmandu, Bhaktapur, Lalitpur, Nuwakot, and Dhading districts.</p>
+  <div class="hero-badge">🗺 Nepal Road Network · Dijkstra SPF · Kathmandu District</div>
+  <h1>Find the <span>Shortest Route</span><br>Across the City</h1>
+  <p>RouteOptima uses Dijkstra's shortest-path algorithm on real OpenStreetMap spatial datasets optimized for Kathmandu district's topological road intersections.</p>
   <div class="hero-actions">
     <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Start Routing Free</a>
     <a href="{% url 'about' %}"    class="btn btn-ghost btn-lg">Learn More</a>
@@ -39,22 +207,21 @@
 </section>
 
 <div class="districts-section">
-  <h2>Coverage Districts</h2>
-  <p>Real road network data from OpenStreetMap — updated live.</p>
-  <div class="district-chips">
-    <span class="district-chip">📍 Kathmandu</span>
-    <span class="district-chip">📍 Bhaktapur</span>
-    <span class="district-chip">📍 Lalitpur</span>
-    <span class="district-chip">📍 Nuwakot</span>
-    <span class="district-chip">📍 Dhading</span>
+  <h2>Coverage Focus</h2>
+  <p>High-fidelity structural graphs parsed straight from OpenStreetMap datasets.</p>
+  <div class="single-district-container">
+    <div class="district-chips">
+      <span class="district-chip primary-focus">📍 Kathmandu District</span>
+    </div>
+    <p class="coverage-meta-text">Standalone system configuration specialized for dense urban mapping frameworks, local alley tracking, and core ring-road topology segments.</p>
   </div>
 </div>
 
 <div class="stats-section">
-  <div class="s"><div class="val">5</div><div class="lbl">Districts Covered</div></div>
-  <div class="s"><div class="val">50K+</div><div class="lbl">Road Nodes</div></div>
+  <div class="s"><div class="val">8,490</div><div class="lbl">Road Nodes</div></div>
+  <div class="s"><div class="val">21,519</div><div class="lbl">Graph Edges</div></div>
   <div class="s"><div class="val">Dijkstra</div><div class="lbl">Core Algorithm</div></div>
-  <div class="s"><div class="val">Free</div><div class="lbl">OSM Data</div></div>
+  <div class="s"><div class="val">Live</div><div class="lbl">OSM Graph Data</div></div>
 </div>
 
 <div class="features-grid">
