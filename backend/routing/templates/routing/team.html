@@ -1,44 +1,188 @@
 {% extends 'routing/base.html' %}
 {% block title %}Team — RouteOptima{% endblock %}
 {% block public %}
+
+<style>
+  /* Base flex wrapper configuration for the team card grid */
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .team-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .team-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px var(--card-glow);
+  }
+
+  .team-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--bg3);
+    color: var(--text1);
+    font-weight: 700;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    border: 2px solid var(--border);
+  }
+
+  .team-card h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text1);
+    font-size: 1.15rem;
+  }
+
+  .team-card .role {
+    font-size: 13px;
+    color: var(--accent2);
+    line-height: 1.4;
+    margin-bottom: 0.75rem;
+    font-weight: 500;
+  }
+
+  .team-card .email {
+    font-size: 11px;
+    color: var(--text3);
+    word-break: break-all;
+  }
+
+  /* ==========================================================================
+     MOBILE BREAKPOINTS & RESPONSIVE RECONSTRUCTION (NO EMOJIS)
+     ========================================================================== */
+  @media (max-width: 768px) {
+    /* Responsive Top Navigation Stack */
+    .landing-nav {
+      padding: 0.75rem 1rem;
+      flex-direction: column;
+      gap: 0.75rem;
+      position: relative; /* Prevents text cards from sliding underneath navigation layer */
+    }
+
+    .nav-links {
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .nav-links a {
+      font-size: 13px;
+    }
+
+    .nav-actions {
+      width: 100%;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--border);
+      padding-top: 0.5rem;
+    }
+
+    /* Page Headings Padding Re-calculations */
+    .page-header {
+      padding: 3rem 1rem 1rem !important;
+      text-align: center;
+    }
+
+    .page-header h1 {
+      font-size: 1.8rem;
+    }
+
+    .page-body {
+      padding: 1rem !important;
+    }
+
+    /* Dynamic Grid Adjustment for Compact Screens */
+    .team-grid {
+      grid-template-columns: 1fr !important;
+      gap: 1rem;
+    }
+
+    .team-card {
+      padding: 1.25rem;
+    }
+  }
+</style>
+
 <nav class="landing-nav">
-  <a href="{% url 'landing' %}" class="landing-logo"><div class="icon">&#9672;</div><div><div class="name">RouteOptima</div></div></a>
-  <div class="nav-links"><a href="{% url 'landing' %}">Home</a><a href="{% url 'about' %}">About</a><a href="{% url 'docs' %}">Docs</a></div>
+  <a href="{% url 'landing' %}" class="landing-logo">
+    <div class="icon">&#9672;</div>
+    <div><div class="name">RouteOptima</div></div>
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'landing' %}">Home</a>
+    <a href="{% url 'about' %}">About</a>
+    <a href="{% url 'docs' %}">Docs</a>
+    <a href="{% url 'help' %}">Help</a>
+  </div>
   <div class="nav-actions">
-    {% if user.is_authenticated %}<a href="{% url 'dashboard' %}" class="btn btn-primary btn-sm">Dashboard</a>
-    {% else %}<a href="{% url 'login' %}" class="btn btn-ghost btn-sm">Log In</a><a href="{% url 'register' %}" class="btn btn-primary btn-sm">Sign Up</a>{% endif %}
+    {% if user.is_authenticated %}
+    <a href="{% url 'dashboard' %}" class="btn btn-primary btn-sm">Dashboard</a>
+    {% else %}
+    <a href="{% url 'login' %}"    class="btn btn-ghost btn-sm">Log In</a>
+    <a href="{% url 'register' %}" class="btn btn-primary btn-sm">Sign Up</a>
+    {% endif %}
   </div>
 </nav>
+
 {% block content %}
-<div class="page-header" style="padding-top:5rem"><h1>👥 The Team</h1><div class="desc">Group 36 — IIMS College / Taylor's University · Capstone Project 2026</div></div>
+<div class="page-header" style="padding-top:5rem">
+  <h1>The Team</h1>
+  <div class="desc">Group 36 — IIMS College / Taylor's University · Capstone Project 2026</div>
+</div>
+
 <div class="page-body">
   <div class="card" style="max-width:820px;margin-bottom:1.5rem;padding:1.25rem 1.5rem">
     <p style="color:var(--text2);line-height:1.7">RouteOptima was designed and built by a five-person team under the supervision of <strong style="color:var(--text1)">Nabeen Kumar Aryal</strong> as part of the Bachelor of Computer Science (Honours) degree programme at IIMS College in partnership with Taylor's University, Malaysia.</p>
   </div>
-  <div class="team-grid" style="max-width:900px">
+
+  <div class="team-grid">
     <div class="team-card" style="border-color:var(--accent)">
       <div class="team-avatar" style="background:var(--accent)">SK</div>
-      <h3>Sudip KC</h3><div class="role">🏅 Project Leader<br>System Integration</div>
+      <h3>Sudip KC</h3>
+      <div class="role">Project Leader<br>System Integration</div>
       <div class="email">sudip23012002@iimscollege.edu.np</div>
     </div>
+
     <div class="team-card">
       <div class="team-avatar">SG</div>
-      <h3>Sohit Giri</h3><div class="role">⚙ Backend Architect<br>API & Database</div>
+      <h3>Sohit Giri</h3>
+      <div class="role">Backend Architect<br>API & Database</div>
       <div class="email">sohit23012005@iimscollege.edu.np</div>
     </div>
+
     <div class="team-card">
       <div class="team-avatar">MK</div>
-      <h3>Muskan Khadka</h3><div class="role">🗺 Map & Network<br>GIS Modelling</div>
+      <h3>Muskan Khadka</h3>
+      <div class="role">Map & Network<br>GIS Modelling</div>
       <div class="email">muskan23012027@iimscollege.edu.np</div>
     </div>
+
     <div class="team-card">
       <div class="team-avatar">MP</div>
-      <h3>Mahima Parajuli</h3><div class="role">⚡ Algorithm Engineer<br>Dijkstra SPF</div>
+      <h3>Mahima Parajuli</h3>
+      <div class="role">Algorithm Engineer<br>Dijkstra SPF</div>
       <div class="email">mahima23012049@iimscollege.edu.np</div>
     </div>
+
     <div class="team-card">
       <div class="team-avatar">AB</div>
-      <h3>Apekshya Basnyat</h3><div class="role">🎨 Frontend Dev<br>UI / Simulation</div>
+      <h3>Apekshya Basnyat</h3>
+      <div class="role">Frontend Dev<br>UI / Simulation</div>
       <div class="email">apekshya23012030@iimscollege.edu.np</div>
     </div>
   </div>
