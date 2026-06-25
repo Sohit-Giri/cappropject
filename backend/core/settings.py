@@ -57,11 +57,11 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME':     os.environ.get('DB_NAME',     'fyp_capstone'),
-        'USER':     os.environ.get('DB_USER',     'fyp_capstone_user'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'gaYIiKnJ4426UuLs0fy7cJPywm8FilA9'),
-        'HOST':     os.environ.get('DB_HOST',     'dpg-d8a45lmgvqtc73cgovu0-a.ohio-postgres.render.com'),
-        'PORT':     os.environ.get('DB_PORT',     '5432'),
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'Capstone@557712',
+        'HOST': 'db.fkicztgxqigakkgsnxwi.supabase.co',
+        'PORT': '5432',
     }
 }
 
