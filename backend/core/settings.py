@@ -56,11 +56,18 @@ TEMPLATES = [{
 WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASES = {
-    "default": dj_database_url.parse(
-        "postgresql://postgres:Capstone%40557712@db.fkicztgxqigakkgsnxwi.supabase.co:5432/postgres"
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres.fkicztgxqigakkgsnxwi',
+        'PASSWORD': 'Capstone@557712',
+        'HOST': 'aws-1-ap-south-1.pooler.supabase.com',
+        'PORT': '5432',
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
+    }
 }
-
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
