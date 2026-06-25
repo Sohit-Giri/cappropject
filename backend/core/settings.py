@@ -58,10 +58,11 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'postgres',
-        'USER': 'postgres',
+        'USER': 'postgres.fkicztgxqigakkgsnxwi',  
         'PASSWORD': 'Capstone@557712',
-        'HOST': 'db.fkicztgxqigakkgsnxwi.supabase.co',
-        'PORT': '5432',
+        # Updated to your explicit region: ap-south-1
+        'HOST': 'aws-0-ap-south-1.pooler.supabase.com', 
+        'PORT': '6543', 
     }
 }
 
