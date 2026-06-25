@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import dj_database_url
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -55,15 +56,9 @@ TEMPLATES = [{
 WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres.fkicztgxqigakkgsnxwi',  
-        'PASSWORD': 'Capstone@557712',
-        # Updated to your explicit region: ap-south-1
-        'HOST': 'aws-0-ap-south-1.pooler.supabase.com', 
-        'PORT': '6543', 
-    }
+    "default": dj_database_url.parse(
+        "postgresql://postgres:Capstone%40557712@db.fkicztgxqigakkgsnxwi.supabase.co:5432/postgres"
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
