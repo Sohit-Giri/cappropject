@@ -474,6 +474,21 @@ def share_view(request, token):
 
 # ── Protected pages ───────────────────────────────────────────────────────────
 @login_required
+def warmup_graph(request):
+
+    gm = GraphManager.get_instance()
+
+    if not gm.is_loaded():
+
+        from django.conf import settings
+
+        gm.load_districts(settings.GRAPH_DISTRICTS)
+
+    return JsonResponse({
+        "status":"loading"
+    })
+
+@login_required
 def dashboard(request):
     qs       = RouteLog.objects.filter(user=request.user)
     total    = qs.count()

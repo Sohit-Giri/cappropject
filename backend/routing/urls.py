@@ -50,4 +50,9 @@ path(
     views.create_signup_account,
     name="create_signup_account"
 ),
+path(
+    "warmup-graph/",
+    views.warmup_graph,
+    name="warmup_graph"
+),
 ]
