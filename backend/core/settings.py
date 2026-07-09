@@ -5,9 +5,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-routeoptima-v2-dev-key-2026')
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+SECRET_KEY = os.environ.get("SECRET_KEY")
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 ALLOWED_HOSTS = [
+    ".railway.app",
+    ".up.railway.app",
     'capproject.vercel.app',
     '.vercel.app',          # Catch-all rule for your preview links
     '127.0.0.1',
@@ -56,17 +58,11 @@ TEMPLATES = [{
 WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres.fkicztgxqigakkgsnxwi',
-        'PASSWORD': 'Capstone@557712',
-        'HOST': 'aws-1-ap-south-1.pooler.supabase.com',
-        'PORT': '5432',
-        'OPTIONS': {
-            'sslmode': 'require',
-        },
-    }
+    "default": dj_database_url.config(
+        default=os.environ.get("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True,
+    )
 }
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -110,3 +106,14 @@ EMAIL_USE_TLS      = True
 EMAIL_HOST_USER    = os.environ.get('EMAIL_HOST_USER',    'negativezero48@gmail.com')
 EMAIL_HOST_PASSWORD= os.environ.get('EMAIL_HOST_PASSWORD','ytsb nbhs znjs uiby')
 DEFAULT_FROM_EMAIL = f'RouteOptima <{EMAIL_HOST_USER}>'
+
+# 4. CORS: Allowed frontend origins
+CORS_ALLOWED_ORIGINS = [
+    "https://sohitgiri.com.np",
+    "https://www.sohitgiri.com.np",
+    "https://capproject.vercel.app",
+]
+
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+]
