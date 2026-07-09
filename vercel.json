@@ -1,9 +1,7 @@
 {
   "version": 2,
+  "cleanUrls": true,
   "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "https://capproject-production.up.railway.app/$1"
-    }
+    { "handle": "filesystem" }
   ]
 }
