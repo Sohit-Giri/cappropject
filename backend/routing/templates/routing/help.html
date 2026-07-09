@@ -3,6 +3,80 @@
 {% block public %}
 
 <style>
+  /* ==========================================================================
+     NAVBAR FLUID RESPONSIVENESS & ANTI-OVERLAP FIXES
+     ========================================================================== */
+  .landing-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.5rem;
+    background-color: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    width: 100%;
+    box-sizing: border-box;
+    flex-wrap: wrap; 
+    gap: 1rem;    
+    /* Sticky layout naturally positions itself without breaking structural flows */
+    position: sticky; 
+    top: 0;
+    left: 0;
+    z-index: 1000;
+  }
+
+  .landing-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0; 
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-shrink: 1;
+  }
+
+  .nav-links a {
+    text-decoration: none;
+    white-space: nowrap; 
+  }
+
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+  }
+
+  .nav-actions-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  /* ==========================================================================
+     CONTENT SPACING & LAYOUT STRUCTURES
+     ========================================================================== */
+  .main-content-wrapper {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .page-header {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 1rem 1.5rem; 
+    text-align: left; 
+    box-sizing: border-box;
+  }
+
+  .page-body {
+    padding: 1rem 1.5rem 3rem 1.5rem;
+    box-sizing: border-box;
+  }
+
   .faq-container {
     max-width: 720px;
     margin: 0 auto;
@@ -32,21 +106,55 @@
   }
 
   /* ==========================================================================
-     MOBILE RESPONSIVE BREAKPOINTS & STRUCTURAL INTEGRITY (NO EMOJIS)
+     INTERMEDIATE BREAKPOINT: SPLIT DESKTOP VIEWPORTS (COMPACT CORRECTION)
      ========================================================================== */
-  @media (max-width: 768px) {
-    /* Responsive Top Navigation Stack */
+  @media (max-width: 950px) and (min-width: 581px) {
     .landing-nav {
-      padding: 0.75rem 1rem;
-      flex-direction: column;
+      justify-content: space-between; 
+      padding: 0.5rem 1rem;          
+      gap: 0.5rem;
+    }
+    .nav-links {
+      width: auto;                  
+      order: unset;
+      gap: 1rem;
+    }
+    .nav-actions {
+      width: auto;                  
+      order: unset;
       gap: 0.75rem;
-      position: relative; /* Prevents textual panels from sliding underneath navigation layer */
+    }
+    .theme-dots-container {
+      gap: 0.35rem !important;
+    }
+    .theme-dot {
+      width: 16px !important;
+      height: 16px !important;
+    }
+    .page-header {
+      padding: 1.5rem 1.5rem 0.5rem 1.5rem; 
+    }
+  }
+
+  /* Keep legacy behavior for standard laptop window sizes */
+  @media (max-width: 1100px) and (min-width: 951px) {
+    .nav-links {
+      gap: 1.25rem; 
+    }
+  }
+
+  /* ==========================================================================
+     MOBILE & TABLET VIEWPORT OPTIMIZATIONS
+     ========================================================================== */
+  @media (max-width: 580px) {
+    .landing-nav {
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.65rem 0.5rem;
     }
 
     .nav-links {
-      gap: 1rem;
-      flex-wrap: wrap;
-      justify-content: center;
+      gap: 0.85rem;
     }
 
     .nav-links a {
@@ -54,29 +162,39 @@
     }
 
     .nav-actions {
-      width: 100%;
+      flex-direction: row; 
       justify-content: center;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      border-top: 1px solid var(--border);
-      padding-top: 0.5rem;
+      gap: 0.75rem;
+      width: 100%;
     }
 
-    /* Page Headings Padding Re-calculations */
+    .theme-dots-container {
+      gap: 0.3rem !important;
+    }
+
+    .theme-dot {
+      width: 14px !important;
+      height: 14px !important;
+    }
+
+    .nav-actions-buttons .btn {
+      padding: 0.25rem 0.5rem;
+      font-size: 12px;
+    }
+
     .page-header {
-      padding: 3rem 1rem 1rem !important;
-      text-align: center;
+      padding: 1.5rem 1rem 0.5rem 1rem;
+      text-align: center; 
     }
 
     .page-header h1 {
-      font-size: 1.8rem;
+      font-size: 1.6rem;
     }
 
     .page-body {
-      padding: 1rem !important;
+      padding: 0.75rem !important;
     }
 
-    /* Adjust FAQ items on compact screens */
     .faq-item {
       padding: 1rem;
     }
@@ -97,67 +215,80 @@
     <a href="{% url 'about' %}">About</a>
     <a href="{% url 'docs' %}">Docs</a>
     <a href="{% url 'team' %}">Team</a>
+    <a href="{% url 'help' %}">Help</a> 
   </div>
   <div class="nav-actions">
-    {% if user.is_authenticated %}
-    <a href="{% url 'dashboard' %}" class="btn btn-primary btn-sm">Dashboard</a>
-    {% else %}
-    <a href="{% url 'login' %}"    class="btn btn-ghost btn-sm">Log In</a>
-    <a href="{% url 'register' %}" class="btn btn-primary btn-sm">Sign Up</a>
-    {% endif %}
+    <div class="theme-dots-container" style="display:flex; gap:.45rem; align-items:center; flex-shrink: 0;">
+      <div class="theme-dot" data-t="midnight" title="Midnight"></div>
+      <div class="theme-dot" data-t="obsidian" title="Obsidian"></div>
+      <div class="theme-dot" data-t="emerald"  title="Emerald"></div>
+      <div class="theme-dot" data-t="crimson"  title="Crimson"></div>
+      <div class="theme-dot" data-t="arctic"   title="Arctic"></div>
+      <div class="theme-dot" data-t="parchment" title="Light"></div>
+    </div>
+    <div class="nav-actions-buttons">
+      {% if user.is_authenticated %}
+      <a href="{% url 'dashboard' %}" class="btn btn-primary btn-sm">Dashboard</a>
+      {% else %}
+      <a href="{% url 'login' %}"    class="btn btn-ghost btn-sm">Log In</a>
+      <a href="{% url 'register' %}" class="btn btn-primary btn-sm">Sign Up</a>
+      {% endif %}
+    </div>
   </div>
 </nav>
 
-{% block content %}
-<div class="page-header" style="padding-top:5rem">
-  <h1>Help & FAQ</h1>
-  <div class="desc">Common questions and troubleshooting tips.</div>
-</div>
-
-<div class="page-body">
-  <div class="faq-container">
-    
-    <div class="faq-item">
-      <div class="faq-q">Why is the map blank or stuck on "Loading graph"?</div>
-      <div class="faq-a">The backend framework loads the optimized topological data for Kathmandu District straight from OpenStreetMap on initialization. The layout status panel turns green when processing wraps up. Cached loads start instantaneously in milliseconds.</div>
-    </div>
-    
-    <div class="faq-item">
-      <div class="faq-q">How does place search work?</div>
-      <div class="faq-a">We use the Nominatim geocoding API to parse open spatial databases. Type any place name — a tea shop, school, temple, bank — and matching entries populate inside a dynamic drop-down. Selecting a listing places the target pins.</div>
-    </div>
-    
-    <div class="faq-item">
-      <div class="faq-q">Can I also click on the map instead of searching?</div>
-      <div class="faq-a">Yes. Click the "Click on map" activation button to switch input methods. Your next visual click on the viewport map plots either the structural origin or termination pin. The system cross-references structural components to output text coordinates automatically.</div>
-    </div>
-    
-    <div class="faq-item">
-      <div class="faq-q">What spatial areas are covered?</div>
-      <div class="faq-a">The platform targets the structural boundary of Kathmandu District exclusively. The integrated road network configuration runs directly over 8,490 intersections/nodes and 21,519 calculated system edges.</div>
-    </div>
-    
-    <div class="faq-item">
-      <div class="faq-q">How do I share a computed path?</div>
-      <div class="faq-a">After finishing a route execution process, choose the "Share" link generator button. A cryptographic secure URL maps to your system clipboard, permitting external view actions without an active authenticated session.</div>
-    </div>
-    
-    <div class="faq-item">
-      <div class="faq-q">What is the Heatmap page?</div>
-      <div class="faq-a">It maps general density matrices showing popular start and terminal spatial intersections evaluated by application profiles. Brighter segments reveal dense node coordination requests.</div>
-    </div>
-    
-    <div class="faq-item">
-      <div class="faq-q">How does the Leaderboard function?</div>
-      <div class="faq-a">It aggregates total shortest path distance metrics across registered users. Your cumulative route processing distances translate cleanly to your master index scorecard standing.</div>
-    </div>
-    
-    <div class="faq-item">
-      <div class="faq-q">Can I alter the application system interface style?</div>
-      <div class="faq-a">Yes. Access theme modifications through user dashboard configurations or interact with color parameters found within the top landing navigation strip. Built-in variants include Midnight, Obsidian, Emerald, Crimson, Arctic, and Parchment.</div>
-    </div>
-
+<div class="main-content-wrapper">
+  {% block content %}
+  <div class="page-header">
+    <h1>Help & FAQ</h1>
+    <div class="desc">Common questions and troubleshooting tips.</div>
   </div>
+
+  <div class="page-body">
+    <div class="faq-container">
+      
+      <div class="faq-item">
+        <div class="faq-q">Why is the map blank or stuck on "Loading graph"?</div>
+        <div class="faq-a">The backend framework loads the optimized topological data for Kathmandu District straight from OpenStreetMap on initialization. The layout status panel turns green when processing wraps up. Cached loads start instantaneously in milliseconds.</div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-q">How does place search work?</div>
+        <div class="faq-a">We use the Nominatim geocoding API to parse open spatial databases. Type any place name — a tea shop, school, temple, bank — and matching entries populate inside a dynamic drop-down. Selecting a listing places the target pins.</div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-q">Can I also click on the map instead of searching?</div>
+        <div class="faq-a">Yes. Click the "Click on map" activation button to switch input methods. Your next visual click on the viewport map plots either the structural origin or termination pin. The system cross-references structural components to output text coordinates automatically.</div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-q">What spatial areas are covered?</div>
+        <div class="faq-a">The platform targets the structural boundary of Kathmandu District exclusively. The integrated road network configuration runs directly over 8,490 intersections/nodes and 21,519 calculated system edges.</div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-q">How do I share a computed path?</div>
+        <div class="faq-a">After finishing a route execution process, choose the "Share" link generator button. A cryptographic secure URL maps to your system clipboard, permitting external view actions without an active authenticated session.</div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-q">What is the Heatmap page?</div>
+        <div class="faq-a">It maps general density matrices showing popular start and terminal spatial intersections evaluated by application profiles. Brighter segments reveal dense node coordination requests.</div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-q">How does the Leaderboard function?</div>
+        <div class="faq-a">It aggregates total shortest path distance metrics across registered users. Your cumulative route processing distances translate cleanly to your master index scorecard standing.</div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-q">Can I alter the application system interface style?</div>
+        <div class="faq-a">Yes. Access theme modifications through user dashboard configurations or interact with color parameters found within the top landing navigation strip. Built-in variants include Midnight, Obsidian, Emerald, Crimson, Arctic, and Parchment.</div>
+      </div>
+
+    </div>
+  </div>
+  {% endblock %}
 </div>
-{% endblock %}
 {% endblock %}

@@ -1,6 +1,10 @@
+import random
+
 from django.db import models
 from django.contrib.auth.models import User
 import uuid
+from django.utils import timezone
+from datetime import timedelta
 
 class RouteLog(models.Model):
     user             = models.ForeignKey(User, on_delete=models.CASCADE,
@@ -48,3 +52,66 @@ class UserPreference(models.Model):
 
     def __str__(self):
         return f'{self.user.username} prefs'
+
+class UserOTP(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
+    email = models.EmailField()
+
+    otp_code = models.CharField(max_length=6)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    is_verified = models.BooleanField(default=False)
+
+    purpose = models.CharField(
+        max_length=20,
+        choices=[
+            ("signup","signup"),
+            ("reset","reset"),
+        ],
+        default="signup"
+    )
+
+    def is_valid(self):
+        return timezone.now() < self.created_at + timedelta(minutes=5)
+
+    @classmethod
+    def generate_signup(cls,email):
+
+        cls.objects.filter(
+            email=email,
+            purpose="signup",
+            is_verified=False
+        ).delete()
+
+        otp = f"{random.randint(100000,999999)}"
+
+        return cls.objects.create(
+            email=email,
+            otp_code=otp,
+            purpose="signup"
+        )
+
+    @classmethod
+    def generate_reset(cls,user):
+
+        cls.objects.filter(
+            user=user,
+            purpose="reset",
+            is_verified=False
+        ).delete()
+
+        otp = f"{random.randint(100000,999999)}"
+
+        return cls.objects.create(
+            user=user,
+            email=user.email,
+            otp_code=otp,
+            purpose="reset"
+        )

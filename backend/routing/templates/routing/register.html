@@ -1,30 +1,519 @@
 {% extends 'routing/base.html' %}
 {% block title %}Register — RouteOptima{% endblock %}
 {% block public %}
+
+<style>
+
+.auth-page{
+    width:100%;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:2rem 1rem;
+    box-sizing:border-box;
+}
+
+.auth-card{
+
+    width:100%;
+    max-width:430px;
+
+    background:var(--bg2);
+
+    border:1px solid var(--border);
+
+    border-radius:12px;
+
+    padding:2rem;
+
+    box-sizing:border-box;
+
+}
+
+.hidden{
+    display:none;
+}
+
+.form-group{
+    margin-bottom:1rem;
+}
+
+.form-group input{
+    width:100%;
+}
+
+.verify-badge{
+
+    color:#22c55e;
+
+    font-size:13px;
+
+    margin-bottom:1rem;
+
+}
+
+.password-input-wrapper{
+
+    position:relative;
+
+}
+
+.password-input-wrapper input{
+
+    padding-right:65px;
+
+}
+
+.password-toggle-btn{
+
+    position:absolute;
+
+    right:12px;
+
+    top:50%;
+
+    transform:translateY(-50%);
+
+    border:none;
+
+    background:none;
+
+    cursor:pointer;
+
+}
+
+@media(max-width:600px){
+
+.auth-card{
+
+padding:1.3rem;
+
+}
+
+}
+
+</style>
+
 <div class="auth-page">
-  <div class="auth-card">
-    <div class="auth-logo">
-      <div class="auth-logo-icon">&#9672;</div>
-      <div class="auth-logo-text"><div class="t1">RouteOptima</div><div class="t2">Dijkstra SPF · Nepal</div></div>
-    </div>
-    <a href="{% url 'landing' %}" class="auth-back">← Back to Home</a>
-    <h2>Create account</h2>
-    <p class="sub">Join RouteOptima and start optimising routes.</p>
-    {% if messages %}
-    <div class="msg-list">{% for m in messages %}<div class="msg {% if m.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ m }}</div>{% endfor %}</div>
-    {% endif %}
-    <form method="POST">
-      {% csrf_token %}
-      <div class="form-group"><label>First Name</label><input type="text" name="first_name" placeholder="Your first name"></div>
-      <div class="form-group"><label>Username</label><input type="text" name="username" required autofocus placeholder="choose a username"></div>
-      <div class="form-group"><label>Email</label><input type="email" name="email" placeholder="for welcome email"></div>
-      <div class="form-row">
-        <div class="form-group"><label>Password</label><input type="password" name="password1" required placeholder="min 6 chars"></div>
-        <div class="form-group"><label>Confirm</label><input type="password" name="password2" required placeholder="repeat"></div>
-      </div>
-      <button type="submit" class="btn btn-primary btn-full">Create Account →</button>
-    </form>
-    <div class="auth-footer">Already have an account? <a href="{% url 'login' %}">Log in</a></div>
-  </div>
+
+<div class="auth-card">
+
+<div class="auth-logo">
+
+<div class="auth-logo-icon">&#9672;</div>
+
+<div class="auth-logo-text">
+
+<div class="t1">RouteOptima</div>
+
+<div class="t2">Dijkstra SPF · Nepal</div>
+
 </div>
+
+</div>
+
+<a href="{% url 'landing' %}" class="auth-back">
+
+← Back to Home
+
+</a>
+
+<h2>Create account</h2>
+
+<p class="sub">
+
+Join RouteOptima and start optimising routes.
+
+</p>
+
+<div id="messageBox"></div>
+
+<!-- STEP 1 -->
+
+<div id="step1">
+
+<div class="form-group">
+
+<label>Username</label>
+
+<input
+type="text"
+id="username"
+placeholder="Choose a username">
+
+</div>
+
+<div class="form-group">
+
+<label>Email Address</label>
+
+<input
+type="email"
+id="email"
+placeholder="name@example.com">
+
+</div>
+
+<button
+id="sendOtpBtn"
+class="btn btn-primary btn-full">
+
+Verify Email →
+
+</button>
+
+</div>
+
+<!-- STEP 2 -->
+
+<div
+id="step2"
+class="hidden">
+
+<div class="verify-badge">
+
+Verification code sent to
+
+<b id="emailLabel"></b>
+
+</div>
+
+<div class="form-group">
+
+<label>6 Digit OTP</label>
+
+<input
+type="text"
+maxlength="6"
+id="otp"
+placeholder="123456">
+
+</div>
+
+<button
+id="verifyOtpBtn"
+class="btn btn-primary btn-full">
+
+Verify OTP →
+
+</button>
+
+<div
+style="margin-top:12px;text-align:center;">
+
+<a
+href="#"
+id="resendOtp">
+
+Resend Code
+
+</a>
+
+</div>
+
+</div>
+
+<!-- STEP 3 COMES IN PART B -->
+
+<div id="step3" class="hidden">
+
+<div class="verify-badge">
+
+✓ Email Verified
+
+</div>
+
+<div class="form-group">
+
+<label>What should we call you?</label>
+
+<input
+type="text"
+id="first_name"
+placeholder="Your name">
+
+</div>
+
+<div class="form-group">
+
+<label>Password</label>
+
+<div class="password-input-wrapper">
+
+<input
+type="password"
+id="password1"
+placeholder="Minimum 6 characters">
+
+<button
+type="button"
+class="password-toggle-btn"
+onclick="togglePassword('password1',this)">
+
+Show
+
+</button>
+
+</div>
+
+</div>
+
+<div class="form-group">
+
+<label>Confirm Password</label>
+
+<div class="password-input-wrapper">
+
+<input
+type="password"
+id="password2"
+placeholder="Repeat password">
+
+<button
+type="button"
+class="password-toggle-btn"
+onclick="togglePassword('password2',this)">
+
+Show
+
+</button>
+
+</div>
+
+</div>
+
+<button
+id="createBtn"
+class="btn btn-primary btn-full">
+
+Create Account →
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<script>
+
+function getCookie(name){
+
+let cookieValue=null;
+
+if(document.cookie && document.cookie!==""){
+
+const cookies=document.cookie.split(";");
+
+for(let cookie of cookies){
+
+cookie=cookie.trim();
+
+if(cookie.substring(0,name.length+1)===name+"="){
+
+cookieValue=decodeURIComponent(cookie.substring(name.length+1));
+
+break;
+
+}
+
+}
+
+}
+
+return cookieValue;
+
+}
+
+const csrftoken=getCookie("csrftoken");
+
+function showMessage(message,error=false){
+
+const box=document.getElementById("messageBox");
+
+box.innerHTML=`
+<div class="msg ${error?'msg-error':'msg-success'}">
+${message}
+</div>
+`;
+
+}
+
+function togglePassword(id,button){
+
+const input=document.getElementById(id);
+
+if(input.type==="password"){
+
+input.type="text";
+
+button.innerHTML="Hide";
+
+}else{
+
+input.type="password";
+
+button.innerHTML="Show";
+
+}
+
+}
+
+document.getElementById("sendOtpBtn").onclick=async function(){
+
+const username=document.getElementById("username").value.trim();
+
+const email=document.getElementById("email").value.trim();
+
+const form=new FormData();
+
+form.append("username",username);
+
+form.append("email",email);
+
+const response=await fetch("/register/send-otp/",{
+
+method:"POST",
+
+headers:{
+
+"X-CSRFToken":csrftoken
+
+},
+
+body:form
+
+});
+
+const data=await response.json();
+
+if(data.success){
+
+showMessage(data.message);
+
+document.getElementById("emailLabel").innerHTML=email;
+
+document.getElementById("step1").classList.add("hidden");
+
+document.getElementById("step2").classList.remove("hidden");
+
+}else{
+
+showMessage(data.message,true);
+
+}
+
+};
+
+document.getElementById("verifyOtpBtn").onclick=async function(){
+
+const otp=document.getElementById("otp").value.trim();
+
+const form=new FormData();
+
+form.append("otp",otp);
+
+const response=await fetch("/register/verify-otp/",{
+
+method:"POST",
+
+headers:{
+
+"X-CSRFToken":csrftoken
+
+},
+
+body:form
+
+});
+
+const data=await response.json();
+
+if(data.success){
+
+showMessage(data.message);
+
+document.getElementById("step2").classList.add("hidden");
+
+document.getElementById("step3").classList.remove("hidden");
+
+}else{
+
+showMessage(data.message,true);
+
+}
+
+};
+
+document.getElementById("createBtn").onclick=async function(){
+
+const form=new FormData();
+
+form.append(
+
+"first_name",
+
+document.getElementById("first_name").value
+
+);
+
+form.append(
+
+"password1",
+
+document.getElementById("password1").value
+
+);
+
+form.append(
+
+"password2",
+
+document.getElementById("password2").value
+
+);
+
+const response=await fetch(
+
+"/register/create-account/",{
+
+method:"POST",
+
+headers:{
+
+"X-CSRFToken":csrftoken
+
+},
+
+body:form
+
+});
+
+const data=await response.json();
+
+if(data.success){
+
+window.location=data.redirect;
+
+}else{
+
+showMessage(data.message,true);
+
+}
+
+};
+
+document.getElementById("resendOtp").onclick=function(e){
+
+e.preventDefault();
+
+document.getElementById("sendOtpBtn").click();
+
+};
+
+</script>
 {% endblock %}

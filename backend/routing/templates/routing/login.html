@@ -1,36 +1,270 @@
 {% extends 'routing/base.html' %}
 {% block title %}Log In — RouteOptima{% endblock %}
 {% block public %}
+
+<style>
+  /* ==========================================================================
+     AUTH PAGE
+     ========================================================================== */
+
+  .auth-page{
+      width:100%;
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:2rem 1rem;
+      box-sizing:border-box;
+  }
+
+  .auth-card{
+      width:100%;
+      max-width:420px;
+
+      background:var(--bg2);
+      border:1px solid var(--border);
+      border-radius:12px;
+
+      padding:2rem;
+      box-sizing:border-box;
+
+      box-shadow:0 4px 20px rgba(0,0,0,.15);
+  }
+
+  /* ==========================================================================
+     PASSWORD FIELD
+     ========================================================================== */
+
+  .password-input-wrapper{
+      position:relative;
+      width:100%;
+      display:flex;
+      align-items:center;
+  }
+
+  .password-input-wrapper input{
+      width:100%;
+      padding-right:3rem;
+      box-sizing:border-box;
+  }
+
+  .password-toggle-btn{
+      position:absolute;
+      right:.75rem;
+      top:50%;
+      transform:translateY(-50%);
+
+      border:none;
+      background:none;
+
+      color:var(--text3);
+      cursor:pointer;
+
+      font-size:12px;
+      font-weight:500;
+
+      padding:0;
+      transition:.2s;
+  }
+
+  .password-toggle-btn:hover{
+      color:var(--text1);
+  }
+
+  .form-options-row{
+      display:flex;
+      justify-content:flex-end;
+      margin-top:-.4rem;
+      margin-bottom:1.25rem;
+  }
+
+  .forgot-link{
+      font-size:12px;
+      color:var(--accent2);
+      text-decoration:none;
+  }
+
+  .forgot-link:hover{
+      text-decoration:underline;
+  }
+
+  /* ==========================================================================
+     TABLET
+     ========================================================================== */
+
+  @media (max-width:900px){
+
+      .auth-page{
+          padding:1.5rem 1rem;
+      }
+
+      .auth-card{
+          max-width:400px;
+          padding:1.75rem;
+      }
+
+  }
+
+  /* ==========================================================================
+     MOBILE
+     ========================================================================== */
+
+  @media (max-width:580px){
+
+      .auth-page{
+          padding:1rem;
+      }
+
+      .auth-card{
+          max-width:100%;
+          padding:1.35rem;
+          border-radius:10px;
+      }
+
+      .auth-card h2{
+          font-size:1.45rem;
+      }
+
+      .auth-logo{
+          margin-bottom:1rem;
+      }
+
+  }
+
+  /* ==========================================================================
+     VERY SHORT SCREENS (LANDSCAPE PHONES)
+     ========================================================================== */
+
+  @media (max-height:650px){
+
+      .auth-page{
+          align-items:flex-start;
+          padding:2rem 1rem;
+      }
+
+  }
+
+</style>
+
 <div class="auth-page">
   <div class="auth-card">
+
     <div class="auth-logo">
       <div class="auth-logo-icon">&#9672;</div>
-      <div class="auth-logo-text"><div class="t1">RouteOptima</div><div class="t2">Dijkstra SPF · Nepal</div></div>
+      <div class="auth-logo-text">
+        <div class="t1">RouteOptima</div>
+        <div class="t2">Dijkstra SPF · Nepal</div>
+      </div>
     </div>
+
     <a href="{% url 'landing' %}" class="auth-back">← Back to Home</a>
+
     <h2>Welcome back</h2>
-    <p class="sub">Log in to access your routes and analytics.</p>
+
+    <p class="sub">
+      Log in to access your routes and analytics.
+    </p>
+
     {% if messages %}
-    <div class="msg-list">{% for m in messages %}<div class="msg {% if m.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ m }}</div>{% endfor %}</div>
+    <div class="msg-list">
+      {% for m in messages %}
+      <div class="msg {% if m.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">
+        {{ m }}
+      </div>
+      {% endfor %}
+    </div>
     {% endif %}
+
     <form method="POST">
       {% csrf_token %}
-      <div class="form-group"><label>Username</label><input type="text" name="username" required autofocus placeholder="your username"></div>
-      <div class="form-group"><label>Password</label><input type="password" name="password" required placeholder="••••••••"></div>
-      <button type="submit" class="btn btn-primary btn-full">Log In →</button>
+
+      <div class="form-group">
+        <label>Email Address</label>
+        <input
+          type="email"
+          name="email"
+          required
+          autofocus
+          placeholder="name@example.com">
+      </div>
+
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label>Password</label>
+
+        <div class="password-input-wrapper">
+          <input
+            type="password"
+            id="passwordField"
+            name="password"
+            required
+            placeholder="••••••••">
+
+          <button
+            type="button"
+            class="password-toggle-btn"
+            id="togglePasswordBtn">
+            Show
+          </button>
+        </div>
+      </div>
+
+      <div class="form-options-row">
+        <a href="{% url 'forgot_password' %}" class="forgot-link">
+          Forgot password?
+        </a>
+      </div>
+
+      <button
+        type="submit"
+        class="btn btn-primary btn-full">
+        Log In →
+      </button>
+
     </form>
-    <div class="auth-footer">Don't have an account? <a href="{% url 'register' %}">Sign up free</a></div>
-    <div style="margin-top:.75rem;text-align:center;">
-      <div style="font-size:11px;color:var(--text3);margin-bottom:.5rem;">Choose theme</div>
+
+    <div class="auth-footer">
+      Don't have an account?
+      <a href="{% url 'register' %}">
+        Sign up free
+      </a>
+    </div>
+
+    <div style="margin-top:1.25rem;text-align:center;">
+
+      <div style="font-size:11px;color:var(--text3);margin-bottom:.5rem;">
+        Choose theme
+      </div>
+
       <div style="display:flex;gap:.4rem;justify-content:center;">
         <div class="theme-dot" data-t="midnight" title="Midnight"></div>
         <div class="theme-dot" data-t="obsidian" title="Obsidian"></div>
-        <div class="theme-dot" data-t="emerald"  title="Emerald"></div>
-        <div class="theme-dot" data-t="crimson"  title="Crimson"></div>
-        <div class="theme-dot" data-t="arctic"   title="Arctic"></div>
+        <div class="theme-dot" data-t="emerald" title="Emerald"></div>
+        <div class="theme-dot" data-t="crimson" title="Crimson"></div>
+        <div class="theme-dot" data-t="arctic" title="Arctic"></div>
         <div class="theme-dot" data-t="parchment" title="Light"></div>
       </div>
+
     </div>
+
   </div>
 </div>
+
+<script>
+
+document.getElementById('togglePasswordBtn').addEventListener('click', function(){
+
+    const passwordField=document.getElementById('passwordField');
+
+    if(passwordField.type==="password"){
+        passwordField.type="text";
+        this.textContent="Hide";
+    }else{
+        passwordField.type="password";
+        this.textContent="Show";
+    }
+
+});
+
+</script>
+
 {% endblock %}

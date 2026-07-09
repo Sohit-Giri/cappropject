@@ -10,12 +10,17 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions
 import csv, json
-from .models import RouteLog, SavedRoute, UserPreference
+import random
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_protect
+
+# UPDATED: Added UserOTP to this line
+from .models import RouteLog, SavedRoute, UserPreference, UserOTP
+
 from .serializers import (RouteRequestSerializer, RouteLogSerializer,
                            SavedRouteSerializer)
 from .graph_manager import GraphManager
 from .route_engine import RouteEngine
-
 
 def _get_pref(user):
     pref, _ = UserPreference.objects.get_or_create(user=user)
@@ -49,6 +54,33 @@ Open the app: https://your-app.vercel.app/dashboard/
     except Exception:
         pass
 
+def send_signup_email(email, otp):
+
+    subject = "Verify your RouteOptima account"
+
+    message = f"""
+Hello,
+
+Welcome to RouteOptima.
+
+Your verification code is
+
+{otp}
+
+This OTP expires in 5 minutes.
+
+If you did not request this, simply ignore this email.
+
+RouteOptima
+"""
+
+    send_mail(
+        subject,
+        message,
+        conf.DEFAULT_FROM_EMAIL,
+        [email],
+        fail_silently=False
+    )
 
 # ── Public pages ──────────────────────────────────────────────────────────────
 def landing(request):
@@ -56,19 +88,137 @@ def landing(request):
         return redirect('dashboard')
     return render(request, 'routing/landing.html')
 
+# 1. REQUEST OTP VIEW
+def forgot_password_view(request):
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        try:
+            user = User.objects.get(email=email)
+            otp_record = UserOTP.generate_for_user(user)
+            
+            # Send Email containing the Code
+            subject = "Your RouteOptima Password Reset OTP"
+            message = f"Hello {user.first_name or user.username},\n\nYour OTP for resetting your password is: {otp_record.otp_code}\n\nThis code expires in 5 minutes."
+            
+            send_mail(subject, message, conf.DEFAULT_FROM_EMAIL or 'noreply@routeoptima.com', [user.email], fail_silently=False)
+            
+            # Store target email temporarily in session to identify user during verification step
+            request.session['reset_email'] = email
+            messages.success(request, 'A 6-digit OTP has been sent to your email address!')
+            return redirect('verify_otp')
+        except User.DoesNotExist:
+            messages.error(request, 'No account found matching that email address.')
+            
+    return render(request, 'routing/forgot_password.html')
+
+
+# 2. VERIFY OTP & RESEND VIEW
+def verify_otp_view(request):
+    email = request.session.get('reset_email')
+    if not email:
+        messages.error(request, 'Session expired. Please request a new OTP.')
+        return redirect('forgot_password')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        # Handle Resend Request explicitly
+        if action == 'resend':
+            try:
+                user = User.objects.get(email=email)
+                otp_record = UserOTP.generate_for_user(user)
+                subject = "Your RouteOptima Password Reset OTP"
+                message = f"Your new RouteOptima OTP is: {otp_record.otp_code}"
+# FIXED: Swapped out the hardcoded string for your system's global default settings configurations
+                send_mail(
+                    subject, 
+                    message, 
+                    getattr(conf, 'DEFAULT_FROM_EMAIL', 'RouteOptima <noreply@routeoptima.com>'), 
+                    [email],
+                    fail_silently=False
+                )
+                messages.success(request, 'A fresh OTP code has been dispatched!')
+            except Exception:
+                messages.error(request, 'Error sending new OTP. Try again.')
+            return redirect('verify_otp')
+
+        # Handle Standard Verification Check
+        otp_input = request.POST.get('otp', '').strip()
+        try:
+            user = User.objects.get(email=email)
+            otp_record = UserOTP.objects.filter(user=user, otp_code=otp_input).latest('created_at')
+            
+            if otp_record.is_valid():
+                otp_record.is_verified = True
+                otp_record.save()
+                request.session['otp_verified'] = True
+                messages.success(request, 'OTP verified successfully. Set your new password.')
+                return redirect('reset_password')
+            else:
+                messages.error(request, 'This OTP has expired. Click resend below.')
+        except UserOTP.DoesNotExist:
+            messages.error(request, 'Invalid code. Check your mailbox and try again.')
+
+    return render(request, 'routing/verify_otp.html', {'email': email})
+
+
+# 3. SET NEW PASSWORD VIEW
+def reset_password_view(request):
+    email = request.session.get('reset_email')
+    verified = request.session.get('otp_verified')
+    
+    if not email or not verified:
+        messages.error(request, 'Unauthorized access attempt. Verify via OTP first.')
+        return redirect('forgot_password')
+
+    if request.method == 'POST':
+        p1 = request.POST.get('password1', '')
+        p2 = request.POST.get('password2', '')
+        
+        if p1 != p2:
+            messages.error(request, 'Passwords do not match.')
+        elif len(p1) < 6:
+            messages.error(request, 'Password must be at least 6 characters.')
+        else:
+            user = User.objects.get(email=email)
+            user.set_password(p1)
+            user.save()
+            
+            # Clear reset session completely 
+            request.session.flush()
+            messages.success(request, 'Password changed successfully! Log in now. 🎉')
+            return redirect('login')
+
+    return render(request, 'routing/reset_password.html')
 
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
+        
     if request.method == 'POST':
-        user = authenticate(request,
-                            username=request.POST.get('username'),
-                            password=request.POST.get('password'))
-        if user:
+        identifier = request.POST.get('email', '').strip() or request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        
+        # Try to find if a user exists with this email address
+        try:
+            if '@' in identifier:
+                user_obj = User.objects.get(email=identifier)
+                # Swap the email string for their actual database username
+                identifier = user_obj.username
+        except User.DoesNotExist:
+            # If email isn't found, keep going; authenticate() will catch the error safely below
+            pass
+
+        # Authenticate using the structural database username
+        user = authenticate(request, username=identifier, password=password)
+        
+        if user is not None:
             login(request, user)
             messages.success(request, f'Welcome back, {user.first_name or user.username}! 👋')
             return redirect(request.GET.get('next', '/dashboard/'))
+        
         messages.error(request, 'Invalid username or password.')
+        
     return render(request, 'routing/login.html')
 
 
@@ -97,7 +247,215 @@ def register_view(request):
             return redirect('dashboard')
     return render(request, 'routing/register.html')
 
+@require_POST
+def send_signup_otp(request):
 
+    username = request.POST.get("username","").strip()
+
+    email = request.POST.get("email","").strip().lower()
+
+    if not username:
+
+        return JsonResponse({
+            "success":False,
+            "message":"Username is required."
+        })
+
+    if not email:
+
+        return JsonResponse({
+            "success":False,
+            "message":"Email is required."
+        })
+
+    if User.objects.filter(username=username).exists():
+
+        return JsonResponse({
+            "success":False,
+            "message":"Username already exists."
+        })
+
+    if User.objects.filter(email=email).exists():
+
+        return JsonResponse({
+            "success":False,
+            "message":"Email already registered."
+        })
+
+    otp_record = UserOTP.generate_signup(email)
+
+    try:
+
+        send_signup_email(
+            email,
+            otp_record.otp_code
+        )
+
+    except Exception as e:
+
+        return JsonResponse({
+            "success":False,
+            "message":"Unable to send email."
+        })
+
+    request.session["signup_username"] = username
+
+    request.session["signup_email"] = email
+
+    return JsonResponse({
+
+        "success":True,
+
+        "message":"OTP sent successfully."
+
+    })
+
+@require_POST
+def verify_signup_otp(request):
+
+    email = request.session.get("signup_email")
+
+    if not email:
+        return JsonResponse({
+            "success": False,
+            "message": "Registration session expired."
+        })
+
+    otp = request.POST.get("otp", "").strip()
+
+    if not otp:
+        return JsonResponse({
+            "success": False,
+            "message": "Enter OTP."
+        })
+
+    try:
+
+        otp_record = UserOTP.objects.filter(
+            email=email,
+            purpose="signup",
+            otp_code=otp
+        ).latest("created_at")
+
+    except UserOTP.DoesNotExist:
+
+        return JsonResponse({
+            "success": False,
+            "message": "Invalid OTP."
+        })
+
+    if not otp_record.is_valid():
+
+        return JsonResponse({
+            "success": False,
+            "message": "OTP expired."
+        })
+
+    otp_record.is_verified = True
+    otp_record.save()
+
+    request.session["signup_verified"] = True
+
+    return JsonResponse({
+
+        "success": True,
+
+        "message": "Email verified."
+
+    })
+
+@require_POST
+def create_signup_account(request):
+
+    if not request.session.get("signup_verified"):
+
+        return JsonResponse({
+            "success": False,
+            "message": "Verify your email first."
+        })
+
+    username = request.session.get("signup_username")
+    email = request.session.get("signup_email")
+
+    first_name = request.POST.get(
+        "first_name",
+        ""
+    ).strip()
+
+    password1 = request.POST.get(
+        "password1",
+        ""
+    )
+
+    password2 = request.POST.get(
+        "password2",
+        ""
+    )
+
+    if first_name == "":
+        return JsonResponse({
+            "success": False,
+            "message": "Enter your name."
+        })
+
+    if password1 != password2:
+        return JsonResponse({
+            "success": False,
+            "message": "Passwords do not match."
+        })
+
+    if len(password1) < 6:
+        return JsonResponse({
+            "success": False,
+            "message": "Password must be at least 6 characters."
+        })
+
+    if User.objects.filter(username=username).exists():
+        return JsonResponse({
+            "success": False,
+            "message": "Username already exists."
+        })
+
+    if User.objects.filter(email=email).exists():
+        return JsonResponse({
+            "success": False,
+            "message": "Email already exists."
+        })
+
+    user = User.objects.create_user(
+
+        username=username,
+
+        email=email,
+
+        first_name=first_name,
+
+        password=password1
+
+    )
+
+    UserPreference.objects.create(user=user)
+
+    login(request, user)
+
+    _send_welcome(user)
+
+    UserOTP.objects.filter(
+        email=email,
+        purpose="signup"
+    ).delete()
+
+    request.session.pop("signup_username", None)
+    request.session.pop("signup_email", None)
+    request.session.pop("signup_verified", None)
+
+    return JsonResponse({
+
+        "success": True,
+
+        "redirect": "/dashboard/"
+
+    })
 def logout_view(request):
     logout(request)
     return redirect('landing')

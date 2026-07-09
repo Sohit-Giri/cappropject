@@ -4,7 +4,61 @@
 
 {% block public %}
 <style>
-  /* Keep your existing .single-district-container and .district-chip elements here */
+  /* ==========================================================================
+     NAVBAR FLUID RESPONSIVENESS & ANTI-OVERLAP FIXES
+     ========================================================================== */
+  .landing-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.5rem;
+    background-color: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    width: 100%;
+    box-sizing: border-box;
+    flex-wrap: wrap; 
+    gap: 1rem;    
+    position: sticky; 
+    top: 0;
+    left: 0;
+    z-index: 1000;
+  }
+
+  .landing-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0; 
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-shrink: 1;
+  }
+
+  .nav-links a {
+    text-decoration: none;
+    white-space: nowrap; 
+  }
+
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+  }
+
+  .nav-actions-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  /* ==========================================================================
+     LAYOUT STRUCTURES
+     ========================================================================== */
   .single-district-container {
     display: flex;
     flex-direction: column;
@@ -34,20 +88,55 @@
   }
 
   /* ==========================================================================
-     NEW MOBILE RESPONSIVE ADAPTATIONS
+     INTERMEDIATE BREAKPOINT: SPLIT DESKTOP VIEWPORTS (FIXES THE GIANT ROW GAP)
      ========================================================================== */
-  @media (max-width: 768px) {
+  @media (max-width: 950px) and (min-width: 581px) {
     .landing-nav {
-      padding: 0.75rem 1rem;
-      flex-direction: column;
+      justify-content: space-between; /* Keeps layout items balanced left-to-right */
+      padding: 0.5rem 1rem;          /* Dramatically shrinks vertical space */
+      gap: 0.5rem;
+    }
+    .nav-links {
+      width: auto;                  /* Prevents links from forcing a separate full line */
+      order: unset;
+      gap: 1rem;
+    }
+    .nav-actions {
+      width: auto;                  /* Keeps theme and buttons grouped neatly */
+      order: unset;
       gap: 0.75rem;
-      position: relative; /* Prevents hero section content from sliding under navigation on mobile */
+    }
+    .theme-dots-container {
+      gap: 0.35rem !important;
+    }
+    .theme-dot {
+      width: 16px !important;
+      height: 16px !important;
+    }
+    .hero {
+      padding: 4rem 1.5rem !important; /* Optimizes spacing height below the header */
+    }
+  }
+
+  /* Keep legacy behavior for standard laptop window sizes */
+  @media (max-width: 1100px) and (min-width: 951px) {
+    .nav-links {
+      gap: 1.25rem; 
+    }
+  }
+
+  /* ==========================================================================
+     MOBILE BREAKPOINT
+     ========================================================================== */
+  @media (max-width: 580px) {
+    .landing-nav {
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.65rem 0.5rem;
     }
 
     .nav-links {
-      gap: 1rem;
-      flex-wrap: wrap;
-      justify-content: center;
+      gap: 0.85rem;
     }
 
     .nav-links a {
@@ -55,117 +144,56 @@
     }
 
     .nav-actions {
-      width: 100%;
+      flex-direction: row; 
       justify-content: center;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      border-top: 1px solid var(--border);
-      padding-top: 0.5rem;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .theme-dots-container {
+      gap: 0.3rem !important;
+    }
+
+    .theme-dot {
+      width: 14px !important;
+      height: 14px !important;
+    }
+
+    .nav-actions-buttons .btn {
+      padding: 0.25rem 0.5rem;
+      font-size: 12px;
     }
 
     .hero {
       min-height: auto;
-      padding: 3rem 1rem 3rem;
+      padding: 2.5rem 1rem !important; 
     }
 
     .hero h1 {
-      font-size: 1.8rem;
+      font-size: 1.6rem !important;
       letter-spacing: -0.5px;
     }
     
     .hero p {
-      font-size: 0.95rem;
-      margin-bottom: 1.75rem;
+      font-size: 0.9rem !important;
+      margin-bottom: 1.5rem;
     }
 
-    /* Stack stats into two columns on compact phone configurations */
     .stats-section {
       grid-template-columns: repeat(2, 1fr) !important;
     }
     
     .stats-section .s {
-      padding: 1.25rem 0.5rem;
+      padding: 1rem 0.5rem;
     }
 
     .stats-section .s .val {
-      font-size: 1.5rem;
-    }
-  }
-  /* Dynamic Dashboard Workspace Transformations */
-  @media (max-width: 991px) {
-    .app-layout {
-      flex-direction: column;
-      height: auto;
-      overflow: visible;
-    }
-
-    .sidebar {
-      width: 100% !important;
-      height: auto;
-      position: relative;
-      border-right: none;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .sidebar-brand {
-      justify-content: center;
-    }
-
-    .nav-section {
-      display: flex;
-      flex-direction: row;
-      overflow-x: auto;
-      padding: 0.5rem;
-      white-space: nowrap;
-      gap: 0.5rem;
-    }
-
-    .nav-label {
-      display: none; /* Converted to compact icon strip structure for space saving */
-    }
-
-    .nav-link {
-      border-left: none !important;
-      border-bottom: 3px solid transparent;
-      border-radius: 6px !important;
-      padding: 0.5rem 0.85rem;
-      margin: 0;
-    }
-
-    .nav-link.active {
-      border-bottom-color: var(--accent);
-    }
-
-    .sidebar-footer {
-      padding: 0.75rem 1rem;
-      justify-content: space-between;
-    }
-
-    .main-content {
-      height: auto;
-      overflow: visible;
-    }
-    
-    /* Adapt dashboard stat metrics */
-    .stats-grid {
-      grid-template-columns: repeat(2, 1fr) !important;
-      gap: 0.75rem !important;
-    }
-    
-    /* Ensure auth login blocks fit nicely inside alternative viewports */
-    .auth-card {
-      width: 92% !important;
-      max-width: 440px;
-      padding: 1.75rem !important;
+      font-size: 1.35rem;
     }
   }
 
   @media (max-width: 480px) {
-    .stats-grid {
-      grid-template-columns: 1fr !important;
-    }
-    
-    .form-row {
+    .stats-grid, .form-row {
       grid-template-columns: 1fr !important;
     }
   }
@@ -174,16 +202,20 @@
 <nav class="landing-nav">
   <a href="{% url 'landing' %}" class="landing-logo">
     <div class="icon">&#9672;</div>
-    <div><div class="name">RouteOptima</div><div class="sub">Dijkstra SPF</div></div>
+    <div>
+      <div class="name">RouteOptima</div>
+      <div class="sub">Dijkstra SPF</div>
+    </div>
   </a>
   <div class="nav-links">
+    <a href="{% url 'landing' %}">Home</a>
     <a href="{% url 'about' %}">About</a>
     <a href="{% url 'docs' %}">Docs</a>
     <a href="{% url 'team' %}">Team</a>
     <a href="{% url 'help' %}">Help</a>
   </div>
   <div class="nav-actions">
-    <div style="display:flex;gap:.35rem;align-items:center;">
+    <div class="theme-dots-container" style="display:flex; gap:.45rem; align-items:center; flex-shrink: 0;">
       <div class="theme-dot" data-t="midnight" title="Midnight"></div>
       <div class="theme-dot" data-t="obsidian" title="Obsidian"></div>
       <div class="theme-dot" data-t="emerald"  title="Emerald"></div>
@@ -191,8 +223,10 @@
       <div class="theme-dot" data-t="arctic"   title="Arctic"></div>
       <div class="theme-dot" data-t="parchment" title="Light"></div>
     </div>
-    <a href="{% url 'login' %}"    class="btn btn-ghost btn-sm">Log In</a>
-    <a href="{% url 'register' %}" class="btn btn-primary btn-sm">Get Started</a>
+    <div class="nav-actions-buttons">
+      <a href="{% url 'login' %}"    class="btn btn-ghost btn-sm">Log In</a>
+      <a href="{% url 'register' %}" class="btn btn-primary btn-sm">Sign Up</a>
+    </div>
   </div>
 </nav>
 

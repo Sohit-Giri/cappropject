@@ -31,4 +31,23 @@ urlpatterns = [
     path('heatmap/',      views.heatmap_view,      name='heatmap'),
     path('leaderboard/',  views.leaderboard_view,  name='leaderboard'),
     path('replay/<int:pk>/', views.replay_view,    name='replay'),
+    path('forgot-password/', views.forgot_password_view, name='forgot_password'),
+    path('verify-otp/', views.verify_otp_view, name='verify_otp'),
+    path('reset-password/', views.reset_password_view, name='reset_password'),
+path(
+    'register/send-otp/',
+    views.send_signup_otp,
+    name='send_signup_otp'
+),
+path(
+    "register/verify-otp/",
+    views.verify_signup_otp,
+    name="verify_signup_otp"
+),
+
+path(
+    "register/create-account/",
+    views.create_signup_account,
+    name="create_signup_account"
+),
 ]
