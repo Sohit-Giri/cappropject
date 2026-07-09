@@ -8,6 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY")
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 ALLOWED_HOSTS = [
+    "cappropject-production.up.railway.app",
     ".railway.app",
     ".up.railway.app",
     'capproject.vercel.app',
@@ -16,6 +17,12 @@ ALLOWED_HOSTS = [
     'localhost',
     "sohitgiri.com.np",
     "www.sohitgiri.com.np",
+]
+CSRF_TRUSTED_ORIGINS = [
+    "https://cappropject-production.up.railway.app",
+    "https://sohitgiri.com.np",
+    "https://www.sohitgiri.com.np",
+    "https://capproject.vercel.app",
 ]
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -109,6 +116,7 @@ DEFAULT_FROM_EMAIL = f'RouteOptima <{EMAIL_HOST_USER}>'
 
 # 4. CORS: Allowed frontend origins
 CORS_ALLOWED_ORIGINS = [
+    "https://cappropject-production.up.railway.app",
     "https://sohitgiri.com.np",
     "https://www.sohitgiri.com.np",
     "https://capproject.vercel.app",
@@ -117,3 +125,11 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.vercel\.app$",
 ]
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "Lax"
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
