@@ -79,7 +79,7 @@ RouteOptima
         message,
         conf.DEFAULT_FROM_EMAIL,
         [email],
-        fail_silently=False
+        fail_silently=True
     )
 
 # ── Public pages ──────────────────────────────────────────────────────────────
