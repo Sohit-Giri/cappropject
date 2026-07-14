@@ -3,25 +3,74 @@
 {% block public %}
 
 <style>
-  /* ==========================================================================
-     NAVBAR FLUID RESPONSIVENESS & ANTI-OVERLAP FIXES
-     ========================================================================== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root, [data-theme="parchment"] {
+    --bg0: #fcfaf2;
+    --bg1: #ffffff;
+    --bg2: #f4f1e6;
+    --bg3: #e9e4d5;
+    --bg4: #dbd4c0;
+    --accent: #2563eb;
+    --accent2: #1d4ed8;
+    --accent3: #1e40af;
+    --text1: #000000;
+    --text2: #1e293b;
+    --text3: #475569;
+    --green: #16a34a;
+    --red: #dc2626;
+    --yellow: #d97706;
+    --purple: #7c3aed;
+    --border: rgba(37, 99, 235, 0.15);
+    --card-glow: rgba(37, 99, 235, 0.04);
+    --sidebar-bg: rgba(255, 255, 255, 0.97);
+  }
+
+  [data-theme="emerald"] {
+    --bg0: #050f0a;
+    --bg1: #081a10;
+    --bg2: #0c2418;
+    --bg3: #103020;
+    --bg4: #15422c;
+    --accent: #10b981;
+    --accent2: #34d399;
+    --accent3: #059669;
+    --text1: #ffffff;
+    --text2: #ffffff;
+    --text3: #a7f3d0;
+    --green: #a7f3d0;
+    --red: #fca5a5;
+    --yellow: #fde68a;
+    --purple: #c4b5fd;
+    --border: rgba(16, 185, 129, 0.22);
+    --card-glow: rgba(16, 185, 129, 0.08);
+    --sidebar-bg: rgba(8, 26, 16, 0.95);
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg0);
+    color: var(--text1);
+    transition: background .3s, color .3s;
+  }
+
   .landing-nav {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0.85rem 1.5rem;
-    background-color: var(--bg3);
+    background-color: var(--bg1);
     border-bottom: 1px solid var(--border);
     width: 100%;
     box-sizing: border-box;
     flex-wrap: wrap; 
     gap: 1rem;    
-    /* Sticky positioning handles spacing dynamically without crushing elements underneath */
     position: sticky; 
     top: 0;
     left: 0;
     z-index: 1000;
+    backdrop-filter: blur(12px);
   }
 
   .landing-logo {
@@ -29,6 +78,31 @@
     align-items: center;
     gap: 0.5rem;
     flex-shrink: 0; 
+    text-decoration: none;
+  }
+
+  .landing-logo .icon {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #ffffff;
+  }
+
+  .landing-logo .name {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text1);
+    letter-spacing: -.3px;
+  }
+
+  .landing-logo .sub {
+    font-size: 10px;
+    color: var(--text3);
   }
 
   .nav-links {
@@ -39,8 +113,15 @@
   }
 
   .nav-links a {
+    font-size: 14px;
+    color: var(--text2);
     text-decoration: none;
     white-space: nowrap; 
+    transition: color .2s;
+  }
+
+  .nav-links a:hover {
+    color: var(--text1);
   }
 
   .nav-actions {
@@ -56,9 +137,98 @@
     align-items: center;
   }
 
-  /* ==========================================================================
-     CONTENT SPACING & ALIGNMENT STRUCTURES
-     ========================================================================== */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    padding: .7rem 1.3rem;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all .2s;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+  }
+
+  .btn-primary:hover {
+    background: var(--accent2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px var(--card-glow);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+
+  .btn-ghost:hover {
+    background: var(--bg2);
+    color: var(--text1);
+  }
+
+  .btn-sm {
+    padding: .38rem .85rem;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+
+  .btn-lg {
+    padding: .9rem 2rem;
+    font-size: 16px;
+    border-radius: 10px;
+  }
+
+  .theme-switch-container {
+    position: relative;
+    width: 60px;
+    height: 30px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background 0.3s, border-color 0.3s;
+  }
+
+  .theme-switch-slider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s;
+    z-index: 2;
+  }
+
+  .theme-switch-icon {
+    font-size: 12px;
+    z-index: 1;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+  }
+
+  [data-theme="emerald"] .theme-switch-slider {
+    transform: translateX(30px);
+  }
+
   .main-content-wrapper {
     width: 100%;
     box-sizing: border-box;
@@ -67,9 +237,22 @@
   .page-header {
     max-width: 960px;
     margin: 0 auto;
-    padding: 2.5rem 1.5rem 1rem 1.5rem; /* Balanced base padding */
+    padding: 2.5rem 1.5rem 1rem 1.5rem;
     text-align: left; 
     box-sizing: border-box;
+  }
+
+  .page-header h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 900;
+    letter-spacing: -1px;
+    margin-bottom: 0.5rem;
+  }
+
+  .page-header .desc {
+    font-size: 1.1rem;
+    color: var(--text2);
+    line-height: 1.6;
   }
 
   .page-body {
@@ -79,7 +262,21 @@
     margin: 0 auto;
   }
 
-  /* Prevent large JSON payloads from breaking horizontal container limits */
+  .card {
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px var(--card-glow);
+  }
+
+  .card-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    color: var(--text1);
+  }
+
   .code-block {
     background: var(--bg0);
     border: 1px solid var(--border);
@@ -90,7 +287,7 @@
     color: var(--text2);
     overflow-x: auto;
     margin-top: .65rem;
-    white-space: pre-wrap; /* Wraps long JSON strings onto the next line on small viewports */
+    white-space: pre-wrap; 
     word-break: break-all;
   }
 
@@ -100,49 +297,61 @@
     border-radius: 10px;
     padding: 1rem 1.25rem;
     margin-bottom: 1rem;
+    box-shadow: 0 4px 20px var(--card-glow);
   }
 
-  /* ==========================================================================
-     INTERMEDIATE BREAKPOINT: SPLIT DESKTOP VIEWPORTS (FIXES THE GIANT ROW GAP)
-     ========================================================================== */
+  .endpoint-method {
+    font-family: monospace;
+    font-weight: 800;
+    font-size: 12px;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    margin-right: 0.5rem;
+  }
+
+  .method-post {
+    background: rgba(124, 58, 237, 0.15);
+    color: var(--purple);
+  }
+
+  .method-get {
+    background: rgba(22, 163, 74, 0.15);
+    color: var(--green);
+  }
+
+  .endpoint-url {
+    font-family: monospace;
+    font-weight: 700;
+    color: var(--text1);
+  }
+
   @media (max-width: 950px) and (min-width: 581px) {
     .landing-nav {
-      justify-content: space-between; 
-      padding: 0.5rem 1rem;          
+      justify-content: space-between;
+      padding: 0.5rem 1rem;
       gap: 0.5rem;
     }
     .nav-links {
-      width: auto;                  
+      width: auto;
       order: unset;
       gap: 1rem;
     }
     .nav-actions {
-      width: auto;                  
+      width: auto;
       order: unset;
       gap: 0.75rem;
     }
-    .theme-dots-container {
-      gap: 0.35rem !important;
-    }
-    .theme-dot {
-      width: 16px !important;
-      height: 16px !important;
-    }
     .page-header {
-      padding: 1.5rem 1.5rem 0.5rem 1.5rem; 
+      padding: 1.5rem 1.5rem 0.5rem 1.5rem;
     }
   }
 
-  /* Keep legacy behavior for standard laptop window sizes */
   @media (max-width: 1100px) and (min-width: 951px) {
     .nav-links {
       gap: 1.25rem; 
     }
   }
 
-  /* ==========================================================================
-     MOBILE & TABLET VIEWPORT OPTIMIZATIONS
-     ========================================================================== */
   @media (max-width: 580px) {
     .landing-nav {
       flex-direction: column;
@@ -163,15 +372,6 @@
       justify-content: center;
       gap: 0.75rem;
       width: 100%;
-    }
-
-    .theme-dots-container {
-      gap: 0.3rem !important;
-    }
-
-    .theme-dot {
-      width: 14px !important;
-      height: 14px !important;
     }
 
     .nav-actions-buttons .btn {
@@ -216,13 +416,10 @@
     <a href="{% url 'help' %}">Help</a>
   </div>
   <div class="nav-actions">
-    <div class="theme-dots-container" style="display:flex; gap:.45rem; align-items:center; flex-shrink: 0;">
-      <div class="theme-dot" data-t="midnight" title="Midnight"></div>
-      <div class="theme-dot" data-t="obsidian" title="Obsidian"></div>
-      <div class="theme-dot" data-t="emerald"  title="Emerald"></div>
-      <div class="theme-dot" data-t="crimson"  title="Crimson"></div>
-      <div class="theme-dot" data-t="arctic"   title="Arctic"></div>
-      <div class="theme-dot" data-t="parchment" title="Light"></div>
+    <div class="theme-switch-container" id="themeToggle" title="Toggle Theme">
+      <div class="theme-switch-slider"></div>
+      <span class="theme-switch-icon">🔵</span>
+      <span class="theme-switch-icon">🟢</span>
     </div>
     <div class="nav-actions-buttons">
       {% if user.is_authenticated %}
@@ -294,4 +491,19 @@ Response: {"status":"success","data":{"path_coords":[...],"total_distance_km":4.
   </div>
   {% endblock %}
 </div>
+
+<script>
+  const toggle = document.getElementById('themeToggle');
+  const root = document.documentElement;
+
+  const savedTheme = localStorage.getItem('theme') || 'parchment';
+  root.setAttribute('data-theme', savedTheme);
+
+  toggle.addEventListener('click', () => {
+    const currentTheme = root.getAttribute('data-theme');
+    const newTheme = currentTheme === 'emerald' ? 'parchment' : 'emerald';
+    root.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  });
+</script>
 {% endblock %}
