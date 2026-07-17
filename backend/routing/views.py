@@ -652,11 +652,10 @@ class RouteAPIView(APIView):
             
         gm = GraphManager.get_instance()
         
-        # LAZY LOAD TRAP: If Vercel recycled the container, load it on-demand right now!
+        # Serverless Container Lazy Load Check
         if not gm.is_loaded():
             try:
                 from django.conf import settings
-                print("Lazy loading graph data from disk inside view process...")
                 gm.load_districts(settings.GRAPH_DISTRICTS)
             except Exception as e:
                 return Response({
@@ -664,7 +663,6 @@ class RouteAPIView(APIView):
                     'message': f'Server failed to load maps from disk: {str(e)}'
                 }, status=500)
                 
-        # Re-verify if loading succeeded
         if not gm.is_loaded():
             return Response({
                 'status': 'error',
@@ -679,34 +677,42 @@ class RouteAPIView(APIView):
             return Response({'status': 'error', 'message': str(e)}, status=400)
             
         if sn == dn:
-            return Response({'status': 'error',
-                             'message': 'Source and destination are too close.'}, status=400)
+            return Response({'status': 'error', 'message': 'Source and destination are too close.'}, status=400)
                              
         engine = RouteEngine()
         try:
-            result = engine.compute_shortest_path(sn, dn, mode=d.get('mode','car'))
+            # 1. Generate multi-modal response payload
+            all_modes_data = engine.compute_all_routes(sn, dn)
         except (ValueError, RuntimeError) as e:
             return Response({'status': 'error', 'message': str(e)}, status=400)
             
-        if result is None:
-            return Response({'status': 'error',
-                             'message': 'No drivable path found between these points.'}, status=404)
+        # Verify that at least one drivable path exists
+        if all_modes_data['car'] is None and all_modes_data['walk'] is None:
+            return Response({'status': 'error', 'message': 'No traversable path found.'}, status=404)
                              
-        path_json = json.dumps(result.get('path_coords', []))
+        # 2. Persist a primary entry in database history records using Car stats as standard
+        primary_mode = all_modes_data['car'] or all_modes_data['walk']
+        path_json = json.dumps(primary_mode['path_coords'])
+        
         log = RouteLog.objects.create(
             user=request.user,
             src_name=d.get('src_name',''), dst_name=d.get('dst_name',''),
             src_lat=d['src_lat'],  src_lon=d['src_lon'],
             dst_lat=d['dst_lat'],  dst_lon=d['dst_lon'],
             src_node=sn, dst_node=dn,
-            path_distance_m=result['total_distance_meters'],
-            path_distance_km=result['total_distance_km'],
-            node_count=result['node_count'],
+            path_distance_m=primary_mode['total_distance_meters'],
+            path_distance_km=primary_mode['total_distance_km'],
+            node_count=primary_mode['node_count'],
             path_coords=path_json
         )
-        result['route_id']    = log.id
-        result['share_token'] = str(log.share_token)
-        return Response({'status': 'success', 'data': result})
+        
+        # 3. Append relational details and respond
+        return Response({
+            'status': 'success',
+            'route_id': log.id,
+            'share_token': str(log.share_token),
+            'routes': all_modes_data  # Contains data for 'walk', 'bike', and 'car'
+        })
 
 
 class GraphInfoAPIView(APIView):

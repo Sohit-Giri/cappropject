@@ -6,6 +6,137 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 {% endblock %}
 {% block content %}
+
+<style>
+/* --- MULTI-MODAL COMPARISON HUB UI LAYOUT (LIGHT THEME MATCHED) --- */
+.comparison-hub-wrapper {
+  background: transparent;
+  border-radius: 8px;
+  padding: 14px 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.comparison-hub-title {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 6px;
+}
+
+.comparison-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.mode-summary-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 10px 12px;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.mode-summary-card:hover {
+  background: #f3f4f6;
+  transform: translateX(2px);
+}
+
+.mode-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.mode-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1f2937;
+  font-size: 13.5px;
+}
+
+.mode-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.mode-eta-badge {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.02em;
+}
+
+.mode-metrics-row {
+  display: flex;
+  gap: 16px;
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
+.metric-icon {
+  opacity: 0.8;
+  margin-right: 2px;
+}
+
+.comparison-actions-row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-action {
+  flex: 1;
+  border: none;
+  color: #ffffff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, filter 0.15s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-action:hover {
+  filter: brightness(0.95);
+}
+
+.btn-save { background: #2563eb; }
+.btn-share { background: #4b5563; }
+.btn-reset { background: #dc2626; }
+.mode-select-comparison {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.mode-card {
+  flex: 1;
+  background: var(--bg0);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.mode-card.active[data-mode="walk"] { border-color: var(--green); background: rgba(22, 163, 74, 0.05); }
+.mode-card.active[data-mode="bike"] { border-color: var(--yellow); background: rgba(217, 119, 6, 0.05); }
+.mode-card.active[data-mode="car"] { border-color: var(--accent); background: rgba(37, 99, 235, 0.05); }
+.mode-header { font-size: 13px; font-weight: 600; color: var(--text1); }
+.mode-eta { font-size: 14px; font-weight: 700; margin: 0.25rem 0; }
+.mode-dist { font-size: 11px; color: var(--text3); }
+</style>
 <div class="map-layout" style="height:calc(100vh - 0px)">
   <!-- Side panel -->
   <div class="map-panel">
@@ -33,13 +164,26 @@
     </div>
     <button class="btn btn-ghost btn-sm" style="margin-top:-.25rem" onclick="clicking='dst';setHint('Click on the map to set end point')">📌 Click on map</button>
 
-    <div style="font-size:12px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-top:.5rem">Travel Mode</div>
-    <div class="mode-select">
-      <div class="mode-btn {% if mode == 'walk' %}active{% endif %}" data-mode="walk">🚶 Walk</div>
-      <div class="mode-btn {% if mode == 'bike' %}active{% endif %}" data-mode="bike">🚲 Bike</div>
-      <div class="mode-btn {% if mode == 'car' %}active{% else %}{% endif %}" data-mode="car" {% if mode != 'walk' and mode != 'bike' %}style="background:var(--accent);border-color:var(--accent);color:#fff"{% endif %}>🚗 Car</div>
-    </div>
-    <input type="hidden" id="selectedMode" value="{{ mode }}">
+<!-- Replace the Travel Mode select section with this -->
+<div style="font-size:12px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-top:.5rem">Routing Comparisons</div>
+<div class="mode-select-comparison">
+  <div class="mode-card active" data-mode="walk" id="card-walk">
+    <div class="mode-header">🚶 Walk</div>
+    <div class="mode-eta" id="eta-walk">-- min</div>
+    <div class="mode-dist" id="dist-walk">-- km</div>
+  </div>
+  <div class="mode-card active" data-mode="bike" id="card-bike">
+    <div class="mode-header">🚲 Bike</div>
+    <div class="mode-eta" id="eta-bike">-- min</div>
+    <div class="mode-dist" id="dist-bike">-- km</div>
+  </div>
+  <div class="mode-card active" data-mode="car" id="card-car">
+    <div class="mode-header">🚗 Car</div>
+    <div class="mode-eta" id="eta-car">-- min</div>
+    <div class="mode-dist" id="dist-car">-- km</div>
+  </div>
+</div>
+<input type="hidden" id="selectedMode" value="all">
 
     <div id="routeResult" style="display:none">
       <div class="route-result">

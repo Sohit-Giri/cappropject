@@ -48,35 +48,21 @@ class GraphManager:
             path = os.path.join(cache_dir, f"{safe}.graphml")
             fallback_path = os.path.join(
                 cache_dir,
-                "kathmandu_nepal.graphml"
+                "budhanilkantha_kirtipur.graphml"
             )
 
             try:
-                if os.path.exists(path):
-                    print(f"LOADING ABSOLUTE CACHE FILE: {path}")
-                    logger.info(f"Loading cached graph: {path}")
-                    g = ox.load_graphml(path)
-
-                elif os.path.exists(fallback_path):
-                    print(
-                        f"LOADING FALLBACK CACHE FILE: "
-                        f"{fallback_path}"
-                    )
-                    logger.info(
-                        f"Using fallback graph: "
-                        f"{fallback_path}"
-                    )
+                # Force it to check the new file first instead of the dynamic 'path'
+                if os.path.exists(fallback_path):
+                    print(f"LOADING LOCALIZED MESH FILE: {fallback_path}")
+                    logger.info(f"Loading cached graph: {fallback_path}")
                     g = ox.load_graphml(fallback_path)
-
+                elif os.path.exists(path):
+                    print(f"LOADING ABSOLUTE CACHE FILE: {path}")
+                    g = ox.load_graphml(path)
                 else:
-                    print(
-                        f"ERROR: Graph file not found on disk at: "
-                        f"{path}"
-                    )
-
-                    raise FileNotFoundError(
-                        f"Missing map file for {place}"
-                    )
+                    print(f"ERROR: Graph file not found on disk at: {fallback_path}")
+                    raise FileNotFoundError(f"Missing map file for {place}")
 
                 graphs.append(g)
                 self._loaded_count += 1
