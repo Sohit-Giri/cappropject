@@ -2,10 +2,18 @@
 {% block title %}Register — RouteOptima{% endblock %}
 {% block public %}
 
+<!-- Inline script to prevent theme flashing during page load -->
+<script>
+  (function() {
+    const savedTheme = localStorage.getItem('theme') || 'parchment';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  })();
+</script>
+
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
+  :root, [data-theme="parchment"] {
     --bg0: #fcfaf2;
     --bg1: #ffffff;
     --bg2: #f4f1e6;
@@ -26,11 +34,33 @@
     --sidebar-bg: rgba(255, 255, 255, 0.97);
   }
 
+  [data-theme="emerald"] {
+    --bg0: #050f0a;
+    --bg1: #081a10;
+    --bg2: #0c2418;
+    --bg3: #103020;
+    --bg4: #15422c;
+    --accent: #10b981;
+    --accent2: #34d399;
+    --accent3: #059669;
+    --text1: #ffffff;
+    --text2: #e2f8ed;
+    --text3: #a7f3d0;
+    --green: #a7f3d0;
+    --red: #fca5a5;
+    --yellow: #fde68a;
+    --purple: #c4b5fd;
+    --border: rgba(16, 185, 129, 0.2);
+    --card-glow: rgba(16, 185, 129, 0.08);
+    --sidebar-bg: rgba(8, 26, 16, 0.95);
+  }
+
   html, body {
     height: 100%;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg0);
     color: var(--text1);
+    transition: background .3s, color .3s;
   }
 
   .auth-page {
@@ -53,6 +83,7 @@
     padding: 2.5rem 2rem;
     box-sizing: border-box;
     box-shadow: 0 8px 30px var(--card-glow);
+    transition: background .3s, border-color .3s;
   }
 
   .auth-logo {
@@ -225,12 +256,11 @@
   }
 
   .verify-badge {
-    color: var(--text3);
+    color: var(--green);
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     margin-bottom: 1.25rem;
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     gap: 0.35rem;
   }
@@ -291,6 +321,13 @@
       padding: 1.5rem 1rem;
     }
   }
+  .btn:disabled {
+    background: var(--bg4);
+    color: var(--text3);
+    cursor: not-allowed;
+    transform: none !important; /* Prevents the hover hover animation */
+    box-shadow: none !important;
+}
 </style>
 
 <div class="auth-page">
@@ -311,7 +348,7 @@
     </p>
 
     <div id="messageBox"></div>
-
+{% csrf_token %}
     <!-- STEP 1 -->
     <div id="step1">
       <div class="form-group">
@@ -333,19 +370,19 @@
       <button
         id="sendOtpBtn"
         class="btn btn-primary btn-full">
-        Verify Email →
+        Verify Email
       </button>
 
+      <!-- Return to Login Button (Styled as a small ghost-sm button) -->
       <a href="{% url 'login' %}" class="btn btn-ghost-sm btn-full" style="margin-top: 1rem;">
-        ← Return to Login
+        Return to Login
       </a>
     </div>
 
     <!-- STEP 2 -->
     <div id="step2" class="hidden">
       <div class="verify-badge">
-        <span>Verification code sent to:</span> 
-        <span id="emailLabel" style="font-weight: 700; color: var(--text1);"></span>
+        Verification code sent to: <span id="emailLabel" style="font-weight: 700; color: var(--text1); margin-left: 0.25rem;"></span>
       </div>
 
       <div class="form-group" style="margin-bottom: 1.5rem;">
@@ -360,7 +397,7 @@
       <button
         id="verifyOtpBtn"
         class="btn btn-primary btn-full">
-        Verify OTP →
+        Verify OTP
       </button>
 
       <div style="margin-top: 1.25rem; text-align: center;">
@@ -370,8 +407,8 @@
 
     <!-- STEP 3 -->
     <div id="step3" class="hidden">
-      <div class="verify-badge" style="color: var(--green); font-weight: 600;">
-        ✓ Email Verified
+      <div class="verify-badge">
+        Email Verified Successfully!
       </div>
 
       <div class="form-group">
@@ -417,7 +454,7 @@
       <button
         id="createBtn"
         class="btn btn-primary btn-full">
-        Create Account →
+        Create Account
       </button>
     </div>
 
@@ -455,10 +492,6 @@
     `;
   }
 
-  document.addEventListener("DOMContentLoaded", function() {
-    document.documentElement.setAttribute('data-theme', 'parchment');
-  });
-
   function togglePassword(id, button) {
     const input = document.getElementById(id);
     if (input.type === "password") {
@@ -470,31 +503,54 @@
     }
   }
 
-  document.getElementById("sendOtpBtn").onclick = async function() {
+document.getElementById("sendOtpBtn").onclick = async function() {
+    const btn = this; // 'this' refers to the sendOtpBtn element
     const username = document.getElementById("username").value.trim();
     const email = document.getElementById("email").value.trim();
+    
+    // Basic validation before sending to prevent empty requests
+    if (!username || !email) {
+        showMessage("Please fill in both username and email.", true);
+        return;
+    }
+
+    // 1. Lock the button immediately to prevent spam clicks
+    btn.disabled = true;
+    btn.innerText = "Sending OTP...";
+
     const form = new FormData();
     form.append("username", username);
     form.append("email", email);
 
-    const response = await fetch("/register/send-otp/", {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": csrftoken
-      },
-      body: form
-    });
-    const data = await response.json();
+    try {
+        const response = await fetch("/register/send-otp/", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken
+            },
+            body: form
+        });
+        const data = await response.json();
 
-    if (data.success) {
-      showMessage(data.message);
-      document.getElementById("emailLabel").innerHTML = email;
-      document.getElementById("step1").classList.add("hidden");
-      document.getElementById("step2").classList.remove("hidden");
-    } else {
-      showMessage(data.message, true);
+        if (data.success) {
+            showMessage(data.message);
+            document.getElementById("emailLabel").innerHTML = email;
+            document.getElementById("step1").classList.add("hidden");
+            document.getElementById("step2").classList.remove("hidden");
+        } else {
+            showMessage(data.message, true);
+            // 2. Re-enable button on backend validation failure
+            btn.disabled = false;
+            btn.innerText = "Verify Email →";
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        showMessage("Something went wrong. Please try again.", true);
+        // 3. Re-enable button on network failure
+        btn.disabled = false;
+        btn.innerText = "Verify Email →";
     }
-  };
+};
 
   document.getElementById("verifyOtpBtn").onclick = async function() {
     const otp = document.getElementById("otp").value.trim();
@@ -541,10 +597,74 @@
     }
   };
 
-  document.getElementById("resendOtp").onclick = function(e) {
-    e.preventDefault();
-    document.getElementById("sendOtpBtn").click();
-  };
+// Add a cool-down timer variable at the top of your script block or just above the event
+let resendTimer = null;
+
+document.getElementById("resendOtp").onclick = async function(e) {
+  e.preventDefault();
+  
+  const link = this;
+  
+  // If the link is currently in a cooldown state, ignore the click
+  if (link.style.pointerEvents === 'none') return;
+
+  const username = document.getElementById("username").value.trim();
+  const email = document.getElementById("email").value.trim();
+
+  // 1. Visually disable the link immediately
+  link.style.pointerEvents = 'none';
+  link.style.color = 'var(--text3)';
+  link.innerText = "Sending code...";
+
+  const form = new FormData();
+  form.append("username", username);
+  form.append("email", email);
+
+  try {
+    const response = await fetch("/register/send-otp/", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": csrftoken
+      },
+      body: form
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      showMessage("A new OTP has been sent successfully!");
+      
+      // 2. Start a 30-second countdown before letting them resend again
+      let secondsLeft = 30;
+      link.innerText = `Resend in ${secondsLeft}s`;
+      
+      resendTimer = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft <= 0) {
+          clearInterval(resendTimer);
+          link.style.pointerEvents = 'auto';
+          link.style.color = 'var(--accent)';
+          link.innerText = "Resend Code";
+        } else {
+          link.innerText = `Resend in ${secondsLeft}s`;
+        }
+      }, 1000);
+
+    } else {
+      showMessage(data.message, true);
+      // Reset immediately if the backend throws an error
+      link.style.pointerEvents = 'auto';
+      link.style.color = 'var(--accent)';
+      link.innerText = "Resend Code";
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    showMessage("Something went wrong. Please try again.", true);
+    // Reset immediately on network failure
+    link.style.pointerEvents = 'auto';
+    link.style.color = 'var(--accent)';
+    link.innerText = "Resend Code";
+  }
+};
 </script>
 
 {% endblock %}
