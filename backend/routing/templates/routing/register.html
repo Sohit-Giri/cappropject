@@ -2,18 +2,10 @@
 {% block title %}Register — RouteOptima{% endblock %}
 {% block public %}
 
-<!-- Inline script to prevent theme flashing during page load -->
-<script>
-  (function() {
-    const savedTheme = localStorage.getItem('theme') || 'parchment';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-  })();
-</script>
-
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root, [data-theme="parchment"] {
+  :root {
     --bg0: #fcfaf2;
     --bg1: #ffffff;
     --bg2: #f4f1e6;
@@ -34,33 +26,11 @@
     --sidebar-bg: rgba(255, 255, 255, 0.97);
   }
 
-  [data-theme="emerald"] {
-    --bg0: #050f0a;
-    --bg1: #081a10;
-    --bg2: #0c2418;
-    --bg3: #103020;
-    --bg4: #15422c;
-    --accent: #10b981;
-    --accent2: #34d399;
-    --accent3: #059669;
-    --text1: #ffffff;
-    --text2: #e2f8ed;
-    --text3: #a7f3d0;
-    --green: #a7f3d0;
-    --red: #fca5a5;
-    --yellow: #fde68a;
-    --purple: #c4b5fd;
-    --border: rgba(16, 185, 129, 0.2);
-    --card-glow: rgba(16, 185, 129, 0.08);
-    --sidebar-bg: rgba(8, 26, 16, 0.95);
-  }
-
   html, body {
     height: 100%;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg0);
     color: var(--text1);
-    transition: background .3s, color .3s;
   }
 
   .auth-page {
@@ -83,7 +53,6 @@
     padding: 2.5rem 2rem;
     box-sizing: border-box;
     box-shadow: 0 8px 30px var(--card-glow);
-    transition: background .3s, border-color .3s;
   }
 
   .auth-logo {
@@ -256,11 +225,12 @@
   }
 
   .verify-badge {
-    color: var(--green);
+    color: var(--text3);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
     margin-bottom: 1.25rem;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.35rem;
   }
@@ -366,7 +336,6 @@
         Verify Email →
       </button>
 
-      <!-- Return to Login Button (Styled as a small ghost-sm button) -->
       <a href="{% url 'login' %}" class="btn btn-ghost-sm btn-full" style="margin-top: 1rem;">
         ← Return to Login
       </a>
@@ -375,7 +344,8 @@
     <!-- STEP 2 -->
     <div id="step2" class="hidden">
       <div class="verify-badge">
-        Verification code sent to: <span id="emailLabel" style="font-weight: 700; color: var(--text1); margin-left: 0.25rem;"></span>
+        <span>Verification code sent to:</span> 
+        <span id="emailLabel" style="font-weight: 700; color: var(--text1);"></span>
       </div>
 
       <div class="form-group" style="margin-bottom: 1.5rem;">
@@ -400,7 +370,7 @@
 
     <!-- STEP 3 -->
     <div id="step3" class="hidden">
-      <div class="verify-badge">
+      <div class="verify-badge" style="color: var(--green); font-weight: 600;">
         ✓ Email Verified
       </div>
 
@@ -484,6 +454,10 @@
       </div>
     `;
   }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    document.documentElement.setAttribute('data-theme', 'parchment');
+  });
 
   function togglePassword(id, button) {
     const input = document.getElementById(id);

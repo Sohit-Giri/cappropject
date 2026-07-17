@@ -5,7 +5,7 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root, [data-theme="parchment"] {
+  :root {
     --bg0: #fcfaf2;
     --bg1: #ffffff;
     --bg2: #f4f1e6;
@@ -26,33 +26,11 @@
     --sidebar-bg: rgba(255, 255, 255, 0.97);
   }
 
-  [data-theme="emerald"] {
-    --bg0: #050f0a;
-    --bg1: #081a10;
-    --bg2: #0c2418;
-    --bg3: #103020;
-    --bg4: #15422c;
-    --accent: #10b981;
-    --accent2: #34d399;
-    --accent3: #059669;
-    --text1: #ffffff;
-    --text2: #e2f8ed;
-    --text3: #a7f3d0;
-    --green: #a7f3d0;
-    --red: #fca5a5;
-    --yellow: #fde68a;
-    --purple: #c4b5fd;
-    --border: rgba(16, 185, 129, 0.2);
-    --card-glow: rgba(16, 185, 129, 0.08);
-    --sidebar-bg: rgba(8, 26, 16, 0.95);
-  }
-
   html, body {
     height: 100%;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg0);
     color: var(--text1);
-    transition: background .3s, color .3s;
   }
 
   .auth-page {
@@ -75,7 +53,6 @@
     padding: 2.5rem 2rem;
     box-sizing: border-box;
     box-shadow: 0 8px 30px var(--card-glow);
-    transition: background .3s, border-color .3s;
   }
 
   .auth-logo {
@@ -287,49 +264,6 @@
     border: 1px solid rgba(22, 163, 74, 0.2);
   }
 
-  .theme-switch-container {
-    position: relative;
-    width: 60px;
-    height: 30px;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 30px;
-    padding: 3px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    transition: background 0.3s, border-color 0.3s;
-    margin: 0 auto;
-  }
-
-  .theme-switch-slider {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: var(--accent);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s;
-    z-index: 2;
-  }
-
-  .theme-switch-icon {
-    font-size: 12px;
-    z-index: 1;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    user-select: none;
-  }
-
-  [data-theme="emerald"] .theme-switch-slider {
-    transform: translateX(30px);
-  }
-
   @media (max-width: 580px) {
     .auth-page {
       padding: 1rem;
@@ -434,17 +368,6 @@
       <a href="{% url 'register' %}">Sign up free</a>
     </div>
 
-    <div style="margin-top:1.75rem; text-align:center;">
-      <div style="font-size:12px; color:var(--text3); margin-bottom:0.5rem; font-weight:500;">
-        Choose theme
-      </div>
-      <div class="theme-switch-container" id="themeToggle" title="Toggle Theme">
-        <div class="theme-switch-slider"></div>
-        <span class="theme-switch-icon">🔵</span>
-        <span class="theme-switch-icon">🟢</span>
-      </div>
-    </div>
-
   </div>
 </div>
 
@@ -460,18 +383,8 @@
     }
   });
 
-  const toggle = document.getElementById('themeToggle');
-  const root = document.documentElement;
-
-  const savedTheme = localStorage.getItem('theme') || 'parchment';
-  root.setAttribute('data-theme', savedTheme);
-
-  toggle.addEventListener('click', () => {
-    const currentTheme = root.getAttribute('data-theme');
-    const newTheme = currentTheme === 'emerald' ? 'parchment' : 'emerald';
-    root.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-  });
+  // Enforcing classic parchment default style environment fallback
+  document.documentElement.setAttribute('data-theme', 'parchment');
 </script>
 
 {% endblock %}

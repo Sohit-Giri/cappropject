@@ -5,7 +5,7 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root, [data-theme="parchment"] {
+  :root {
     --bg0: #fcfaf2;
     --bg1: #ffffff;
     --bg2: #f4f1e6;
@@ -23,28 +23,6 @@
     --purple: #7c3aed;
     --border: #e2e8f0;
     --card-glow: rgba(37, 99, 235, 0.04);
-    --sidebar-bg: rgba(255, 255, 255, 0.97);
-  }
-
-  [data-theme="emerald"] {
-    --bg0: #050f0a;
-    --bg1: #081a10;
-    --bg2: #0c2418;
-    --bg3: #103020;
-    --bg4: #15422c;
-    --accent: #10b981;
-    --accent2: #34d399;
-    --accent3: #059669;
-    --text1: #ffffff;
-    --text2: #e2f8ed;
-    --text3: #a7f3d0;
-    --green: #a7f3d0;
-    --red: #fca5a5;
-    --yellow: #fde68a;
-    --purple: #c4b5fd;
-    --border: rgba(16, 185, 129, 0.2);
-    --card-glow: rgba(16, 185, 129, 0.08);
-    --sidebar-bg: rgba(8, 26, 16, 0.95);
   }
 
   html, body {
@@ -52,7 +30,6 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg0);
     color: var(--text1);
-    transition: background .3s, color .3s;
   }
 
   /* ==========================================================================
@@ -179,48 +156,6 @@
     border-radius: 6px;
   }
 
-  .theme-switch-container {
-    position: relative;
-    width: 60px;
-    height: 30px;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 30px;
-    padding: 3px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    transition: background 0.3s, border-color 0.3s;
-  }
-
-  .theme-switch-slider {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: var(--accent);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s;
-    z-index: 2;
-  }
-
-  .theme-switch-icon {
-    font-size: 12px;
-    z-index: 1;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    user-select: none;
-  }
-
-  [data-theme="emerald"] .theme-switch-slider {
-    transform: translateX(30px);
-  }
-
   /* ==========================================================================
      CONTENT SPACING & GRID LAYOUT STRUCTURES
      ========================================================================== */
@@ -303,7 +238,6 @@
     align-items: center;
     justify-content: center;
     margin: 0 auto 1.25rem;
-    transition: all 0.3s;
   }
 
   .team-avatar-leader {
@@ -330,37 +264,6 @@
     font-size: 12px;
     color: var(--text3);
     word-break: break-all;
-  }
-
-  /* ==========================================================================
-     EMERALD (GREEN) THEME STYLE MATCHING & CONTRAST OPTIMIZATIONS
-     ========================================================================== */
-  [data-theme="emerald"] .team-card-leader {
-    border-color: var(--accent) !important;
-  }
-
-  [data-theme="emerald"] .team-card h3 {
-    color: #ffffff !important;
-  }
-  
-  [data-theme="emerald"] .team-card .role {
-    color: var(--accent) !important;
-  }
-
-  [data-theme="emerald"] .team-card .email {
-    color: #ffffff !important;
-    opacity: 0.8;
-  }
-
-  [data-theme="emerald"] .team-avatar:not(.team-avatar-leader) {
-    color: #ffffff !important;
-    background: var(--bg3) !important;
-  }
-
-  [data-theme="emerald"] .team-avatar-leader {
-    background: var(--accent) !important;
-    color: #050f0a !important; /* High contrast dark text inside the active green avatar */
-    font-weight: 800;
   }
 
   /* ==========================================================================
@@ -461,11 +364,6 @@
     <a href="{% url 'help' %}">Help</a>
   </div>
   <div class="nav-actions">
-    <div class="theme-switch-container" id="themeToggle" title="Toggle Theme">
-      <div class="theme-switch-slider"></div>
-      <span class="theme-switch-icon">🔵</span>
-      <span class="theme-switch-icon">🟢</span>
-    </div>
     <div class="nav-actions-buttons">
       {% if user.is_authenticated %}
       <a href="{% url 'dashboard' %}" class="btn btn-primary btn-sm">Dashboard</a>
@@ -530,17 +428,7 @@
 </div>
 
 <script>
-  const toggle = document.getElementById('themeToggle');
-  const root = document.documentElement;
-
-  const savedTheme = localStorage.getItem('theme') || 'parchment';
-  root.setAttribute('data-theme', savedTheme);
-
-  toggle.addEventListener('click', () => {
-    const currentTheme = root.getAttribute('data-theme');
-    const newTheme = currentTheme === 'emerald' ? 'parchment' : 'emerald';
-    root.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-  });
+  // Enforcing classic parchment default style environment fallback
+  document.documentElement.setAttribute('data-theme', 'parchment');
 </script>
 {% endblock %}
