@@ -217,7 +217,7 @@
   .btn-primary:hover {
     background: var(--accent2);
     transform: translateY(-1px);
-    box-shadow: 0 4px 16px var(--card-glow);
+    box-shadow: 0 4px 166px var(--card-glow);
   }
 
   .btn-ghost-sm {
@@ -301,33 +301,22 @@
   }
 
   @media (max-width: 580px) {
-    .auth-page {
-      padding: 1rem;
-    }
-
-    .auth-card {
-      padding: 1.75rem 1.25rem;
-      border-radius: 12px;
-    }
-
-    .auth-card h2 {
-      font-size: 1.5rem;
-    }
+    .auth-page { padding: 1rem; }
+    .auth-card { padding: 1.75rem 1.25rem; border-radius: 12px; }
+    .auth-card h2 { font-size: 1.5rem; }
   }
 
   @media (max-height: 660px) {
-    .auth-page {
-      align-items: flex-start;
-      padding: 1.5rem 1rem;
-    }
+    .auth-page { align-items: flex-start; padding: 1.5rem 1rem; }
   }
+
   .btn:disabled {
     background: var(--bg4);
     color: var(--text3);
     cursor: not-allowed;
-    transform: none !important; /* Prevents the hover hover animation */
+    transform: none !important;
     box-shadow: none !important;
-}
+  }
 </style>
 
 <div class="auth-page">
@@ -342,38 +331,27 @@
     </div>
 
     <h2>Create account</h2>
-
-    <p class="sub">
-      Join RouteOptima and start optimising routes.
-    </p>
+    <p class="sub">Join RouteOptima and start optimising routes.</p>
 
     <div id="messageBox"></div>
-{% csrf_token %}
+    {% csrf_token %}
+
     <!-- STEP 1 -->
     <div id="step1">
       <div class="form-group">
         <label>Username</label>
-        <input
-          type="text"
-          id="username"
-          placeholder="Choose a username">
+        <input type="text" id="username" placeholder="Choose a username">
       </div>
 
       <div class="form-group" style="margin-bottom: 1.5rem;">
         <label>Email Address</label>
-        <input
-          type="email"
-          id="email"
-          placeholder="name@example.com">
+        <input type="email" id="email" placeholder="name@example.com">
       </div>
 
-      <button
-        id="sendOtpBtn"
-        class="btn btn-primary btn-full">
+      <button id="sendOtpBtn" class="btn btn-primary btn-full">
         Verify Email
       </button>
 
-      <!-- Return to Login Button (Styled as a small ghost-sm button) -->
       <a href="{% url 'login' %}" class="btn btn-ghost-sm btn-full" style="margin-top: 1rem;">
         Return to Login
       </a>
@@ -387,16 +365,10 @@
 
       <div class="form-group" style="margin-bottom: 1.5rem;">
         <label>6 Digit OTP</label>
-        <input
-          type="text"
-          maxlength="6"
-          id="otp"
-          placeholder="123456">
+        <input type="text" maxlength="6" id="otp" placeholder="123456">
       </div>
 
-      <button
-        id="verifyOtpBtn"
-        class="btn btn-primary btn-full">
+      <button id="verifyOtpBtn" class="btn btn-primary btn-full">
         Verify OTP
       </button>
 
@@ -413,54 +385,32 @@
 
       <div class="form-group">
         <label>What should we call you?</label>
-        <input
-          type="text"
-          id="first_name"
-          placeholder="Your name">
+        <input type="text" id="first_name" placeholder="Your name">
       </div>
 
       <div class="form-group">
         <label>Password</label>
         <div class="password-input-wrapper">
-          <input
-            type="password"
-            id="password1"
-            placeholder="Minimum 6 characters">
-          <button
-            type="button"
-            class="password-toggle-btn"
-            onclick="togglePassword('password1', this)">
-            Show
-          </button>
+          <input type="password" id="password1" placeholder="Minimum 6 characters">
+          <button type="button" class="password-toggle-btn" onclick="togglePassword('password1', this)">Show</button>
         </div>
       </div>
 
       <div class="form-group" style="margin-bottom: 1.5rem;">
         <label>Confirm Password</label>
         <div class="password-input-wrapper">
-          <input
-            type="password"
-            id="password2"
-            placeholder="Repeat password">
-          <button
-            type="button"
-            class="password-toggle-btn"
-            onclick="togglePassword('password2', this)">
-            Show
-          </button>
+          <input type="password" id="password2" placeholder="Repeat password">
+          <button type="button" class="password-toggle-btn" onclick="togglePassword('password2', this)">Show</button>
         </div>
       </div>
 
-      <button
-        id="createBtn"
-        class="btn btn-primary btn-full">
+      <button id="createBtn" class="btn btn-primary btn-full">
         Create Account
       </button>
     </div>
 
     <div class="auth-footer">
-      Already have an account?
-      <a href="{% url 'login' %}">Log in</a>
+      Already have an account? <a href="{% url 'login' %}">Log in</a>
     </div>
 
   </div>
@@ -503,18 +453,17 @@
     }
   }
 
-document.getElementById("sendOtpBtn").onclick = async function() {
-    const btn = this; // 'this' refers to the sendOtpBtn element
+  // --- STEP 1: SEND OTP ---
+  document.getElementById("sendOtpBtn").onclick = async function() {
+    const btn = this;
     const username = document.getElementById("username").value.trim();
     const email = document.getElementById("email").value.trim();
     
-    // Basic validation before sending to prevent empty requests
     if (!username || !email) {
-        showMessage("Please fill in both username and email.", true);
-        return;
+      showMessage("Please fill in both username and email.", true);
+      return;
     }
 
-    // 1. Lock the button immediately to prevent spam clicks
     btn.disabled = true;
     btn.innerText = "Sending OTP...";
 
@@ -523,148 +472,172 @@ document.getElementById("sendOtpBtn").onclick = async function() {
     form.append("email", email);
 
     try {
-        const response = await fetch("/register/send-otp/", {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": csrftoken
-            },
-            body: form
-        });
-        const data = await response.json();
+      const response = await fetch("/register/send-otp/", {
+        method: "POST",
+        headers: { "X-CSRFToken": csrftoken },
+        body: form
+      });
+      const data = await response.json();
 
-        if (data.success) {
-            showMessage(data.message);
-            document.getElementById("emailLabel").innerHTML = email;
-            document.getElementById("step1").classList.add("hidden");
-            document.getElementById("step2").classList.remove("hidden");
-        } else {
-            showMessage(data.message, true);
-            // 2. Re-enable button on backend validation failure
-            btn.disabled = false;
-            btn.innerText = "Verify Email →";
-        }
-    } catch (error) {
-        console.error("Error:", error);
-        showMessage("Something went wrong. Please try again.", true);
-        // 3. Re-enable button on network failure
+      if (data.success) {
+        showMessage(data.message);
+        document.getElementById("emailLabel").innerHTML = email;
+        document.getElementById("step1").classList.add("hidden");
+        document.getElementById("step2").classList.remove("hidden");
+      } else {
+        showMessage(data.message, true);
         btn.disabled = false;
-        btn.innerText = "Verify Email →";
+        btn.innerText = "Verify Email";
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      showMessage("Something went wrong. Please try again.", true);
+      btn.disabled = false;
+      btn.innerText = "Verify Email";
     }
-};
+  };
 
+  // --- STEP 2: VERIFY OTP ---
   document.getElementById("verifyOtpBtn").onclick = async function() {
+    const btn = this;
     const otp = document.getElementById("otp").value.trim();
+    
+    if (!otp) {
+      showMessage("Please enter the verification code.", true);
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "Verifying OTP...";
+
     const form = new FormData();
     form.append("otp", otp);
 
-    const response = await fetch("/register/verify-otp/", {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": csrftoken
-      },
-      body: form
-    });
-    const data = await response.json();
+    try {
+      const response = await fetch("/register/verify-otp/", {
+        method: "POST",
+        headers: { "X-CSRFToken": csrftoken },
+        body: form
+      });
+      const data = await response.json();
 
-    if (data.success) {
-      showMessage(data.message);
-      document.getElementById("step2").classList.add("hidden");
-      document.getElementById("step3").classList.remove("hidden");
-    } else {
-      showMessage(data.message, true);
+      if (data.success) {
+        showMessage(data.message);
+        document.getElementById("step2").classList.add("hidden");
+        document.getElementById("step3").classList.remove("hidden");
+      } else {
+        showMessage(data.message, true);
+        btn.disabled = false;
+        btn.innerText = "Verify OTP";
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      showMessage("Something went wrong. Please try again.", true);
+      btn.disabled = false;
+      btn.innerText = "Verify OTP";
     }
   };
 
+  // --- STEP 3: CREATE ACCOUNT ---
   document.getElementById("createBtn").onclick = async function() {
+    const btn = this;
+    const firstName = document.getElementById("first_name").value.trim();
+    const p1 = document.getElementById("password1").value;
+    const p2 = document.getElementById("password2").value;
+
+    if (!firstName || !p1 || !p2) {
+      showMessage("Please fill out all fields.", true);
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "Signing up...";
+
     const form = new FormData();
-    form.append("first_name", document.getElementById("first_name").value);
-    form.append("password1", document.getElementById("password1").value);
-    form.append("password2", document.getElementById("password2").value);
+    form.append("first_name", firstName);
+    form.append("password1", p1);
+    form.append("password2", p2);
 
-    const response = await fetch("/register/create-account/", {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": csrftoken
-      },
-      body: form
-    });
-    const data = await response.json();
+    try {
+      const response = await fetch("/register/create-account/", {
+        method: "POST",
+        headers: { "X-CSRFToken": csrftoken },
+        body: form
+      });
+      const data = await response.json();
 
-    if (data.success) {
-      window.location = data.redirect;
-    } else {
-      showMessage(data.message, true);
+      if (data.success) {
+        window.location = data.redirect;
+      } else {
+        showMessage(data.message, true);
+        btn.disabled = false;
+        btn.innerText = "Create Account";
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      showMessage("Something went wrong. Please try again.", true);
+      btn.disabled = false;
+      btn.innerText = "Create Account";
     }
   };
 
-// Add a cool-down timer variable at the top of your script block or just above the event
-let resendTimer = null;
+  // --- RESEND OTP LINK ---
+  let resendTimer = null;
+  document.getElementById("resendOtp").onclick = async function(e) {
+    e.preventDefault();
+    const link = this;
+    
+    if (link.style.pointerEvents === 'none') return;
 
-document.getElementById("resendOtp").onclick = async function(e) {
-  e.preventDefault();
-  
-  const link = this;
-  
-  // If the link is currently in a cooldown state, ignore the click
-  if (link.style.pointerEvents === 'none') return;
+    const username = document.getElementById("username").value.trim();
+    const email = document.getElementById("email").value.trim();
 
-  const username = document.getElementById("username").value.trim();
-  const email = document.getElementById("email").value.trim();
+    link.style.pointerEvents = 'none';
+    link.style.color = 'var(--text3)';
+    link.innerText = "Sending code...";
 
-  // 1. Visually disable the link immediately
-  link.style.pointerEvents = 'none';
-  link.style.color = 'var(--text3)';
-  link.innerText = "Sending code...";
+    const form = new FormData();
+    form.append("username", username);
+    form.append("email", email);
 
-  const form = new FormData();
-  form.append("username", username);
-  form.append("email", email);
+    try {
+      const response = await fetch("/register/send-otp/", {
+        method: "POST",
+        headers: { "X-CSRFToken": csrftoken },
+        body: form
+      });
+      const data = await response.json();
 
-  try {
-    const response = await fetch("/register/send-otp/", {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": csrftoken
-      },
-      body: form
-    });
-    const data = await response.json();
-
-    if (data.success) {
-      showMessage("A new OTP has been sent successfully!");
-      
-      // 2. Start a 30-second countdown before letting them resend again
-      let secondsLeft = 30;
-      link.innerText = `Resend in ${secondsLeft}s`;
-      
-      resendTimer = setInterval(() => {
-        secondsLeft--;
-        if (secondsLeft <= 0) {
-          clearInterval(resendTimer);
-          link.style.pointerEvents = 'auto';
-          link.style.color = 'var(--accent)';
-          link.innerText = "Resend Code";
-        } else {
-          link.innerText = `Resend in ${secondsLeft}s`;
-        }
-      }, 1000);
-
-    } else {
-      showMessage(data.message, true);
-      // Reset immediately if the backend throws an error
+      if (data.success) {
+        showMessage("A new OTP has been sent successfully!");
+        let secondsLeft = 30;
+        link.innerText = `Resend in ${secondsLeft}s`;
+        
+        resendTimer = setInterval(() => {
+          secondsLeft--;
+          if (secondsLeft <= 0) {
+            clearInterval(resendTimer);
+            link.style.pointerEvents = 'auto';
+            link.style.color = 'var(--accent)';
+            link.innerText = "Resend Code";
+          } else {
+            link.innerText = `Resend in ${secondsLeft}s`;
+          }
+        }, 1000);
+      } else {
+        showMessage(data.message, true);
+        link.style.pointerEvents = 'auto';
+        link.style.color = 'var(--accent)';
+        link.innerText = "Resend Code";
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      showMessage("Something went wrong. Please try again.", true);
       link.style.pointerEvents = 'auto';
       link.style.color = 'var(--accent)';
       link.innerText = "Resend Code";
     }
-  } catch (error) {
-    console.error("Error:", error);
-    showMessage("Something went wrong. Please try again.", true);
-    // Reset immediately on network failure
-    link.style.pointerEvents = 'auto';
-    link.style.color = 'var(--accent)';
-    link.innerText = "Resend Code";
-  }
-};
+  };
 </script>
 
 {% endblock %}

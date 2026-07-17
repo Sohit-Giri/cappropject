@@ -223,6 +223,14 @@
     width: 100%;
   }
 
+  .btn:disabled {
+    background: var(--bg4);
+    color: var(--text3);
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
   .auth-footer {
     margin-top: 1.5rem;
     text-align: center;
@@ -265,25 +273,13 @@
   }
 
   @media (max-width: 580px) {
-    .auth-page {
-      padding: 1rem;
-    }
-
-    .auth-card {
-      padding: 1.75rem 1.25rem;
-      border-radius: 12px;
-    }
-
-    .auth-card h2 {
-      font-size: 1.5rem;
-    }
+    .auth-page { padding: 1rem; }
+    .auth-card { padding: 1.75rem 1.25rem; border-radius: 12px; }
+    .auth-card h2 { font-size: 1.5rem; }
   }
 
   @media (max-height: 660px) {
-    .auth-page {
-      align-items: flex-start;
-      padding: 1.5rem 1rem;
-    }
+    .auth-page { align-items: flex-start; padding: 1.5rem 1rem; }
   }
 </style>
 
@@ -299,10 +295,7 @@
     </div>
 
     <h2>Welcome back</h2>
-
-    <p class="sub">
-      Log in to access your routes and analytics.
-    </p>
+    <p class="sub">Log in to access your routes and analytics.</p>
 
     {% if messages %}
     <div class="msg-list">
@@ -314,7 +307,7 @@
     </div>
     {% endif %}
 
-    <form method="POST">
+    <form method="POST" id="loginForm">
       {% csrf_token %}
 
       <div class="form-group">
@@ -353,6 +346,7 @@
 
       <button
         type="submit"
+        id="loginSubmitBtn"
         class="btn btn-primary btn-full">
         Log In →
       </button>
@@ -364,12 +358,12 @@
     </a>
 
     <div class="auth-footer">
-      Don't have an account?
-      <a href="{% url 'register' %}">Sign up free</a>
+      Don't have an account? <a href="{% url 'register' %}">Sign up free</a>
     </div>
 
   </div>
 </div>
+
 
 <script>
   document.getElementById('togglePasswordBtn').addEventListener('click', function() {
@@ -383,8 +377,43 @@
     }
   });
 
+  // Handle submit with an intentional 2-second delay
+  document.getElementById('loginForm').addEventListener('submit', function(e) {
+    const form = this;
+    const btn = document.getElementById('loginSubmitBtn');
+    
+    // Check if we are already in the waiting period to prevent duplicate execution
+    if (btn.disabled) return;
+    
+    // 1. Stop the immediate form submission
+    e.preventDefault();
+    
+    // List of sarcastic loading lines
+    const sarcasticPhrases = [    
+      "Logging in... grab a coffee, it's a long path.",
+      "Calculating the shortest path to your dignity...",
+      "Consulting Dijkstra... he says you look tired.",
+      "Running algorithm... faster than you wake up.",
+      "Authenticating... don't panic, it's just code.",
+      "Waking up the local nodes... give them a minute."
+    ];
+
+    // Pick a random line from the array
+    const randomPhrase = sarcasticPhrases[Math.floor(Math.random() * sarcasticPhrases.length)];
+    
+    // 2. Lock the button and display the text
+    btn.disabled = true;
+    btn.innerText = randomPhrase;
+
+    // 3. Wait for 2 seconds (2000ms) before sending the data to the backend
+    setTimeout(() => {
+      form.submit();
+    }, 1100);
+  });
+
   // Enforcing classic parchment default style environment fallback
   document.documentElement.setAttribute('data-theme', 'parchment');
 </script>
+
 
 {% endblock %}
