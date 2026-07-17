@@ -1,125 +1,390 @@
 {% extends 'routing/base.html' %}
 {% load static %}
 {% block title %}Compare Routes — RouteOptima{% endblock %}
+
 {% block head %}
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    .cmp2-wrap { display:flex; flex-direction:column; gap:1rem; }
+
+    .cmp2-inputs { display:grid; grid-template-columns:1fr 1fr; gap:1rem 1.25rem; align-items:start; }
+    .cmp2-field { display:flex; flex-direction:column; gap:.4rem; }
+    .cmp2-label {
+      font-size:11px; font-weight:700; text-transform:uppercase;
+      letter-spacing:.5px; color:var(--text3);
+    }
+    .side-btn-row { display:flex; gap:.5rem; }
+    .side-btn-row .btn { flex:1; }
+    .cmp2-inputs .btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+    .cmp2-actions-row { grid-column:1 / -1; display:flex; gap:.5rem; }
+    .cmp2-go-btn {
+      flex:1; background:var(--accent); color:#fff; border:none; border-radius:8px;
+      padding:.75rem 1rem; font-weight:700; font-size:14px; cursor:pointer;
+      transition:filter .15s ease, opacity .15s ease;
+    }
+    .cmp2-go-btn:hover:not(:disabled) { filter:brightness(1.08); }
+    .cmp2-go-btn:disabled { opacity:.45; cursor:not-allowed; }
+
+    .cmp2-status { grid-column:1 / -1; font-size:12px; color:var(--text3); min-height:16px; }
+
+    .cmp2-diff-banner {
+      background:var(--bg0); border:1px solid var(--border); border-left:3px solid var(--accent2);
+      border-radius:8px; padding:.7rem 1rem; font-size:13px; color:var(--text2); line-height:1.5;
+    }
+
+    .cmp2-maps { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .cmp2-map-box {
+      position:relative; border:1px solid var(--border); border-radius:10px;
+      overflow:hidden; height:clamp(260px, 40vh, 440px);
+    }
+    .cmp2-map { width:100%; height:100%; }
+    .cmp2-map-label {
+      position:absolute; top:10px; left:10px; z-index:1000; background:var(--bg0);
+      border:1px solid; border-radius:6px; padding:.3rem .6rem; font-size:12px; font-weight:700;
+    }
+
+    .cmp2-stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:.75rem; }
+    .cmp2-stat {
+      background:var(--bg0); border:1px solid var(--border); border-radius:8px;
+      padding:.75rem; text-align:center;
+    }
+    .cmp2-stat .val { font-size:18px; font-weight:800; }
+    .cmp2-stat .lbl {
+      font-size:11px; color:var(--text3); text-transform:uppercase;
+      letter-spacing:.4px; margin-top:.2rem;
+    }
+
+    .cmp2-charts { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1rem; }
+    .cmp2-chart-card { padding:1rem; }
+    .cmp2-chart-svg { margin-top:.5rem; }
+
+    @media screen and (max-width:768px) {
+      .cmp2-inputs { grid-template-columns:1fr; }
+      .cmp2-maps { grid-template-columns:1fr; }
+      .cmp2-map-box { height:300px; }
+      .place-search-input { font-size:16px !important; }
+    }
+    @media screen and (max-width:360px) {
+      .cmp2-stat .val { font-size:15px; }
+      .cmp2-map-box { height:260px; }
+    }
+  </style>
 {% endblock %}
+
 {% block content %}
 <div class="page-header">
   <h1>⇆ Compare Routes</h1>
-  <div class="desc">Search two routes side-by-side — Dijkstra vs a different endpoint.</div>
+  <div class="desc">Enter one start and end point — see how our Dijkstra engine compares against OSRM's routing engine for the same trip.</div>
 </div>
-<div class="compare-wrap" style="height:calc(100vh - 130px)">
-  <div class="compare-inputs">
-    <!-- Route A -->
-    <div class="card" style="padding:.85rem">
-      <div class="card-title" style="color:var(--accent2)">Route A</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
-        <div>
-          <div style="font-size:11px;color:var(--text3);margin-bottom:.3rem;font-weight:700;text-transform:uppercase">Start A</div>
-          <div class="place-search-wrap"><span class="place-search-icon">🔍</span>
-            <input id="aSrcInput" class="place-search-input" type="text" placeholder="Start point A" autocomplete="off">
-            <div id="aSrcResults" class="place-results" style="display:none"></div></div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--text3);margin-bottom:.3rem;font-weight:700;text-transform:uppercase">End A</div>
-          <div class="place-search-wrap"><span class="place-search-icon">🔍</span>
-            <input id="aDstInput" class="place-search-input" type="text" placeholder="End point A" autocomplete="off">
-            <div id="aDstResults" class="place-results" style="display:none"></div></div>
-        </div>
+
+<div class="cmp2-wrap">
+
+  <!-- Single input card -->
+  <div class="card cmp2-inputs" style="padding:1rem">
+    <div class="cmp2-field">
+      <div class="cmp2-label">Start Point</div>
+      <div class="place-search-wrap"><span class="place-search-icon">🔍</span>
+        <input id="cmpSrcInput" class="place-search-input" type="text" placeholder="Search start (e.g. Pashupatinath)" autocomplete="off">
+        <div id="cmpSrcResults" class="place-results" style="display:none"></div>
       </div>
-      <div id="aResult" style="margin-top:.5rem;font-size:12px;color:var(--text3)">Not computed</div>
-    </div>
-    <!-- Route B -->
-    <div class="card" style="padding:.85rem">
-      <div class="card-title" style="color:var(--green)">Route B</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
-        <div>
-          <div style="font-size:11px;color:var(--text3);margin-bottom:.3rem;font-weight:700;text-transform:uppercase">Start B</div>
-          <div class="place-search-wrap"><span class="place-search-icon">🔍</span>
-            <input id="bSrcInput" class="place-search-input" type="text" placeholder="Start point B" autocomplete="off">
-            <div id="bSrcResults" class="place-results" style="display:none"></div></div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--text3);margin-bottom:.3rem;font-weight:700;text-transform:uppercase">End B</div>
-          <div class="place-search-wrap"><span class="place-search-icon">🔍</span>
-            <input id="bDstInput" class="place-search-input" type="text" placeholder="End point B" autocomplete="off">
-            <div id="bDstResults" class="place-results" style="display:none"></div></div>
-        </div>
+      <div class="side-btn-row">
+        <button id="cmpBtnSrcMap" class="btn btn-ghost btn-sm" type="button">📌 Click on map</button>
+        <button id="cmpBtnSrcLoc" class="btn btn-ghost btn-sm" type="button">📍 Current Loc</button>
       </div>
-      <div id="bResult" style="margin-top:.5rem;font-size:12px;color:var(--text3)">Not computed</div>
+    </div>
+
+    <div class="cmp2-field">
+      <div class="cmp2-label">End Point</div>
+      <div class="place-search-wrap"><span class="place-search-icon">🔍</span>
+        <input id="cmpDstInput" class="place-search-input" type="text" placeholder="Search destination (e.g. Boudha)" autocomplete="off">
+        <div id="cmpDstResults" class="place-results" style="display:none"></div>
+      </div>
+      <div class="side-btn-row">
+        <button id="cmpBtnDstMap" class="btn btn-ghost btn-sm" type="button">📌 Click on map</button>
+        <button id="cmpBtnDstLoc" class="btn btn-ghost btn-sm" type="button">📍 Current Loc</button>
+      </div>
+    </div>
+
+    <div class="cmp2-actions-row">
+      <button id="cmpGoBtn" class="cmp2-go-btn" type="button" disabled>⇆ Compare Routes</button>
+      <button id="cmpClearBtn" class="btn btn-ghost btn-sm" type="button">✕ Clear</button>
+    </div>
+    <div id="cmpStatus" class="cmp2-status">Search or pick a start and end point above.</div>
+  </div>
+
+  <!-- Difference summary -->
+  <div id="cmpDiffBanner" class="cmp2-diff-banner" style="display:none"></div>
+
+  <!-- Two maps -->
+  <div class="cmp2-maps">
+    <div class="cmp2-map-box">
+      <div class="cmp2-map-label" style="border-color:var(--accent2);color:var(--accent2)">🔵 Dijkstra (Ours)</div>
+      <div id="cmpMapA" class="cmp2-map"></div>
+    </div>
+    <div class="cmp2-map-box">
+      <div class="cmp2-map-label" style="border-color:var(--green);color:var(--green)">🟢 OSRM (Alternative)</div>
+      <div id="cmpMapB" class="cmp2-map"></div>
     </div>
   </div>
-  <div class="compare-maps">
-    <div class="compare-map-box"><div class="map-label" style="border-color:var(--accent)">🔵 Route A</div><div id="mapA" style="width:100%;height:100%"></div></div>
-    <div class="compare-map-box"><div class="map-label" style="border-color:var(--green)">🟢 Route B</div><div id="mapB" style="width:100%;height:100%"></div></div>
+
+  <!-- Stats strip -->
+  <div id="cmpStatsStrip" class="cmp2-stats" style="display:none">
+    <div class="cmp2-stat"><div class="val" id="statDistA" style="color:var(--accent2)">—</div><div class="lbl">Dijkstra Distance</div></div>
+    <div class="cmp2-stat"><div class="val" id="statDistB" style="color:var(--green)">—</div><div class="lbl">OSRM Distance</div></div>
+    <div class="cmp2-stat"><div class="val" id="statTimeA" style="color:var(--accent2)">—</div><div class="lbl">Dijkstra ETA</div></div>
+    <div class="cmp2-stat"><div class="val" id="statTimeB" style="color:var(--green)">—</div><div class="lbl">OSRM ETA</div></div>
+    <div class="cmp2-stat"><div class="val" id="statRespA" style="color:var(--accent2)">—</div><div class="lbl">Dijkstra Response</div></div>
+    <div class="cmp2-stat"><div class="val" id="statRespB" style="color:var(--green)">—</div><div class="lbl">OSRM Response</div></div>
   </div>
-  <div class="compare-panel" id="comparePanel" style="display:none">
-    <div><div class="compare-stat"><div class="val" id="cAkm" style="color:var(--accent2)">—</div><div class="lbl">Route A km</div></div></div>
-    <div><div class="compare-stat"><div class="val" id="cBkm" style="color:var(--green)">—</div><div class="lbl">Route B km</div></div></div>
-    <div><div class="compare-stat"><div class="val" id="cAeta">—</div><div class="lbl">Route A ETA</div></div></div>
-    <div><div class="compare-stat"><div class="val" id="cBeta">—</div><div class="lbl">Route B ETA</div></div></div>
+
+  <!-- Comparison charts -->
+  <div id="cmpCharts" class="cmp2-charts" style="display:none">
+    <div class="card cmp2-chart-card">
+      <div class="card-title">Distance Comparison</div>
+      <div id="cmpChartDistance" class="cmp2-chart-svg"></div>
+    </div>
+    <div class="card cmp2-chart-card">
+      <div class="card-title">Time Comparison</div>
+      <div id="cmpChartTime" class="cmp2-chart-svg"></div>
+    </div>
+    <div class="card cmp2-chart-card">
+      <div class="card-title">Response Time Comparison</div>
+      <div id="cmpChartResponse" class="cmp2-chart-svg"></div>
+    </div>
   </div>
+
 </div>
 {% endblock %}
+
 {% block scripts %}
+<script src="{% static 'routing/js/map.js' %}"></script>
 <script>
-const mapA = L.map('mapA').setView([27.7103, 85.3222], 12);
-const mapB = L.map('mapB').setView([27.7103, 85.3222], 12);
-const turl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const attr = '&copy; CartoDB &copy; OpenStreetMap';
-L.tileLayer(turl,{attribution:attr,subdomains:'abcd',maxZoom:19}).addTo(mapA);
-L.tileLayer(turl,{attribution:attr,subdomains:'abcd',maxZoom:19}).addTo(mapB);
+(function () {
+  const mapA = L.map('cmpMapA').setView([27.7103, 85.3222], 12);
+  const mapB = L.map('cmpMapB').setView([27.7103, 85.3222], 12);
 
-const csrf = ()=>document.cookie.split('; ').find(r=>r.startsWith('csrftoken='))?.split('=')[1]||'';
-let stateA={src:null,dst:null}, stateB={src:null,dst:null};
-let routeLA=null, routeLB=null;
-
-async function computeCmp(state, map, routeLayerRef, color, resultEl, prefix) {
-  if (!state.src || !state.dst) return;
-  resultEl.textContent = 'Computing…';
-  const r = await fetch('/api/route/', {
-    method:'POST', credentials:'same-origin',
-    headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},
-    body: JSON.stringify({src_lat:state.src.lat,src_lon:state.src.lon,
-      dst_lat:state.dst.lat,dst_lon:state.dst.lon,mode:'car',
-      src_name:state.src.name||'',dst_name:state.dst.name||''})
-  });
-  const j = await r.json();
-  if (j.status === 'success') {
-    if (routeLayerRef.current) map.removeLayer(routeLayerRef.current);
-    const lls = j.data.path_coords.map(c=>[c.lat,c.lon]);
-    routeLayerRef.current = L.polyline(lls,{color,weight:5,opacity:.85}).addTo(map);
-    map.fitBounds(routeLayerRef.current.getBounds(),{padding:[30,30]});
-    resultEl.innerHTML = `<span style="color:var(--accent2);font-weight:700">${j.data.total_distance_km} km</span> · ${j.data.eta_minutes} min · ${j.data.node_count} nodes`;
-    document.getElementById('c'+prefix+'km').textContent  = j.data.total_distance_km + ' km';
-    document.getElementById('c'+prefix+'eta').textContent = j.data.eta_minutes + ' min';
-    document.getElementById('comparePanel').style.display = 'grid';
-  } else {
-    resultEl.textContent = j.message || 'Error';
+  function getTileConfig() {
+    const t = localStorage.getItem('ro_theme') || 'midnight';
+    if (t === 'midnight') {
+      return { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', subdomains: 'abcd' };
+    }
+    return { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', subdomains: 'abc' };
   }
-}
+  const tcfg = getTileConfig();
+  const attr = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+  L.tileLayer(tcfg.url, { attribution: attr, subdomains: tcfg.subdomains, maxZoom: 20 }).addTo(mapA);
+  L.tileLayer(tcfg.url, { attribution: attr, subdomains: tcfg.subdomains, maxZoom: 20 }).addTo(mapB);
 
-const refA = {current:null}, refB = {current:null};
+  window.addEventListener('resize', () => { mapA.invalidateSize(); mapB.invalidateSize(); });
+  setTimeout(() => { mapA.invalidateSize(); mapB.invalidateSize(); }, 300);
 
-function setupSearch(inId, resId, state, key, map, ref, color, resEl, prefix) {
-  const input   = document.getElementById(inId);
-  const results = document.getElementById(resId);
-  buildSearchUI(input, results, p => {
-    state[key] = {lat:p.lat, lon:p.lon, name:p.name};
-    L.marker([p.lat,p.lon]).addTo(map).bindPopup(p.name);
-    map.setView([p.lat,p.lon],14);
-    if (state.src && state.dst) computeCmp(state,map,ref,color,resEl,prefix);
+  let cmpState = { src: null, dst: null };
+  let pickMode = null; 
+  const markers = { A: { src: null, dst: null }, B: { src: null, dst: null } };
+  const routeLines = { A: null, B: null };
+
+  const el = id => document.getElementById(id);
+  const setStatus = msg => { el('cmpStatus').textContent = msg; };
+  const csrf = () => document.cookie.split('; ').find(r => r.startsWith('csrftoken='))?.split('=')[1] || '';
+
+  function updateGoButtonState() { el('cmpGoBtn').disabled = !(cmpState.src && cmpState.dst); }
+
+  function setMarker(mapKey, map, kind, latlng, label) {
+    if (markers[mapKey][kind]) map.removeLayer(markers[mapKey][kind]);
+    const color = kind === 'src' ? '#34d399' : '#f87171';
+    markers[mapKey][kind] = L.circleMarker(latlng, {
+      radius: 7, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1
+    }).addTo(map).bindPopup(label || (kind === 'src' ? 'Start' : 'End'));
+  }
+
+  function onPointChosen() {
+    if (cmpState.src) {
+      setMarker('A', mapA, 'src', [cmpState.src.lat, cmpState.src.lon], cmpState.src.name);
+      setMarker('B', mapB, 'src', [cmpState.src.lat, cmpState.src.lon], cmpState.src.name);
+    }
+    if (cmpState.dst) {
+      setMarker('A', mapA, 'dst', [cmpState.dst.lat, cmpState.dst.lon], cmpState.dst.name);
+      setMarker('B', mapB, 'dst', [cmpState.dst.lat, cmpState.dst.lon], cmpState.dst.name);
+    }
+    updateGoButtonState();
+    if (cmpState.src && cmpState.dst) computeCompare();
+  }
+
+  buildSearchUI(el('cmpSrcInput'), el('cmpSrcResults'), p => {
+    cmpState.src = { lat: p.lat, lon: p.lon, name: p.name || 'Start' };
+    onPointChosen();
   });
-}
+  buildSearchUI(el('cmpDstInput'), el('cmpDstResults'), p => {
+    cmpState.dst = { lat: p.lat, lon: p.lon, name: p.name || 'End' };
+    onPointChosen();
+  });
 
-const aRes = document.getElementById('aResult');
-const bRes = document.getElementById('bResult');
+  function togglePick(kind, btn) {
+    document.querySelectorAll('.cmp2-inputs .btn').forEach(b => b.classList.remove('active'));
+    if (pickMode === kind) { pickMode = null; setStatus('Search or pick a start and end point above.'); return; }
+    pickMode = kind; btn.classList.add('active');
+    setStatus(kind === 'src' ? 'Click on either map to set the start point' : 'Click on either map to set the end point');
+  }
+  function handleMapClick(e) {
+    if (!pickMode) return;
+    const { lat, lng } = e.latlng;
+    const name = pickMode === 'src' ? 'Start (pinned)' : 'End (pinned)';
+    cmpState[pickMode] = { lat, lon: lng, name };
+    el(pickMode === 'src' ? 'cmpSrcInput' : 'cmpDstInput').value = name;
+    document.querySelectorAll('.cmp2-inputs .btn').forEach(b => b.classList.remove('active'));
+    pickMode = null; onPointChosen();
+  }
+  mapA.on('click', handleMapClick); mapB.on('click', handleMapClick);
+  el('cmpBtnSrcMap').addEventListener('click', function () { togglePick('src', this); });
+  el('cmpBtnDstMap').addEventListener('click', function () { togglePick('dst', this); });
 
-setupSearch('aSrcInput','aSrcResults',stateA,'src',mapA,refA,'#60a5fa',aRes,'A');
-setupSearch('aDstInput','aDstResults',stateA,'dst',mapA,refA,'#60a5fa',aRes,'A');
-setupSearch('bSrcInput','bSrcResults',stateB,'src',mapB,refB,'#34d399',bRes,'B');
-setupSearch('bDstInput','bDstResults',stateB,'dst',mapB,refB,'#34d399',bRes,'B');
+  function useCurrentLocationFor(kind) {
+    if (!navigator.geolocation) { setStatus('Geolocation not supported.'); return; }
+    setStatus('Getting current location…');
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const { latitude: lat, longitude: lon } = pos.coords;
+      let name = 'Current Location';
+      try {
+        const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+        const j = await r.json();
+        if (j.display_name) name = j.display_name.split(',').slice(0, 2).join(',');
+      } catch (e) {}
+      cmpState[kind] = { lat, lon, name };
+      el(kind === 'src' ? 'cmpSrcInput' : 'cmpDstInput').value = name;
+      onPointChosen();
+    }, err => setStatus('Location error: ' + err.message), { enableHighAccuracy: true, timeout: 8000 });
+  }
+  el('cmpBtnSrcLoc').addEventListener('click', () => useCurrentLocationFor('src'));
+  el('cmpBtnDstLoc').addEventListener('click', () => useCurrentLocationFor('dst'));
+
+  async function fetchDijkstraEngine(src, dst) {
+    const r = await fetch('/api/route/', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf() },
+      body: JSON.stringify({ src_lat: src.lat, src_lon: src.lon, dst_lat: dst.lat, dst_lon: dst.lon, mode: 'car' })
+    });
+    const j = await r.json();
+    if (j.status !== 'success') throw new Error(j.message || 'Dijkstra error');
+    const modeData = j.routes?.car || j.routes?.walk || j.routes?.bike;
+    if (!modeData) throw new Error('No route found');
+    const coords = (modeData.path_coords || modeData.coords || []).map(c => Array.isArray(c) ? [c[0], c[1]] : [c.lat, c.lon]);
+    return {
+      coords,
+      distanceKm: +(modeData.total_distance_km ?? (modeData.total_distance_meters/1000)).toFixed(2),
+      etaMin: Math.round(modeData.eta_minutes ?? modeData.eta_min ?? modeData.eta ?? 0)
+    };
+  }
+
+  async function fetchOSRMEngine(src, dst) {
+    const url = `https://router.project-osrm.org/route/v1/driving/${src.lon},${src.lat};${dst.lon},${dst.lat}?overview=full&geometries=geojson`;
+    const r = await fetch(url);
+    const j = await r.json();
+    if (j.code !== 'Ok' || !j.routes?.length) throw new Error('No OSRM route found');
+    return {
+      coords: j.routes[0].geometry.coordinates.map(c => [c[1], c[0]]),
+      distanceKm: +(j.routes[0].distance / 1000).toFixed(2),
+      etaMin: Math.round(j.routes[0].duration / 60)
+    };
+  }
+
+  function drawRoute(map, key, coords, color) {
+    if (routeLines[key]) map.removeLayer(routeLines[key]);
+    routeLines[key] = L.polyline(coords, { color, weight: 5, opacity: 0.85 }).addTo(map);
+    map.fitBounds(routeLines[key].getBounds(), { padding: [30, 30] });
+  }
+  function clearRoutes() {
+    if (routeLines.A) { mapA.removeLayer(routeLines.A); routeLines.A = null; }
+    if (routeLines.B) { mapB.removeLayer(routeLines.B); routeLines.B = null; }
+  }
+
+  function renderStats(a, b) {
+    el('cmpStatsStrip').style.display = 'grid';
+    el('statDistA').textContent = a.distanceKm + ' km';
+    el('statDistB').textContent = b.distanceKm + ' km';
+    el('statTimeA').textContent = a.etaMin + ' min';
+    el('statTimeB').textContent = b.etaMin + ' min';
+    el('statRespA').textContent = a.responseMs + ' ms';
+    el('statRespB').textContent = b.responseMs + ' ms';
+  }
+
+  function renderDiffBanner(a, b) {
+    const distDiff = a.distanceKm - b.distanceKm;
+    const distWord = distDiff <= 0 ? 'shorter' : 'longer';
+    el('cmpDiffBanner').style.display = 'block';
+    el('cmpDiffBanner').innerHTML = `Our Dijkstra route is <strong style="color:var(--accent2)">${Math.abs(distDiff).toFixed(2)} km ${distWord}</strong> ` +
+      `than the OSRM alternative.<br>Server response: <strong style="color:var(--accent2)">${a.responseMs} ms</strong> (Dijkstra) vs ` +
+      `<strong style="color:var(--green)">${b.responseMs} ms</strong> (OSRM).`;
+  }
+
+  function buildBarChartSVG(items, unit) {
+    const w = 320, h = 160, padTop = 24, padBottom = 34, barGap = 40, barW = 64;
+    const max = Math.max(...items.map(i => i.value)) * 1.15 || 1;
+    const chartH = h - padTop - padBottom;
+    const startX = (w - (items.length * barW + (items.length - 1) * barGap)) / 2;
+    let bars = '';
+    items.forEach((it, idx) => {
+      const bh = Math.max(2, (it.value / max) * chartH);
+      const x = startX + idx * (barW + barGap);
+      const y = padTop + (chartH - bh);
+      bars += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="6" fill="${it.color}" opacity="0.9"></rect>
+               <text x="${x + barW / 2}" y="${y - 8}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text1)">${it.value}${unit}</text>
+               <text x="${x + barW / 2}" y="${h - padBottom + 18}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text3)">${it.label}</text>`;
+    });
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:340px;display:block;margin:0 auto"><line x1="${startX - 16}" y1="${h - padBottom}" x2="${w - startX + 16}" y2="${h - padBottom}" stroke="var(--border)" stroke-width="1"></line>${bars}</svg>`;
+  }
+
+  function renderCharts(a, b) {
+    el('cmpCharts').style.display = 'grid';
+    el('cmpChartDistance').innerHTML = buildBarChartSVG([{ label: 'Dijkstra', value: a.distanceKm, color: '#60a5fa' }, { label: 'OSRM', value: b.distanceKm, color: '#34d399' }], ' km');
+    el('cmpChartTime').innerHTML = buildBarChartSVG([{ label: 'Dijkstra', value: a.etaMin, color: '#60a5fa' }, { label: 'OSRM', value: b.etaMin, color: '#34d399' }], ' min');
+    el('cmpChartResponse').innerHTML = buildBarChartSVG([{ label: 'Dijkstra', value: a.responseMs, color: '#60a5fa' }, { label: 'OSRM', value: b.responseMs, color: '#34d399' }], ' ms');
+  }
+
+  async function computeCompare() {
+    const { src, dst } = cmpState;
+    if (!src || !dst) return;
+    setStatus('Computing both routes…');
+    el('cmpGoBtn').disabled = true;
+    clearRoutes();
+
+    const dStart = performance.now();
+    const dTimed = fetchDijkstraEngine(src, dst).then(res => ({ ...res, responseMs: Math.round(performance.now() - dStart) }));
+    const oStart = performance.now();
+    const oTimed = fetchOSRMEngine(src, dst).then(res => ({ ...res, responseMs: Math.round(performance.now() - oStart) }));
+
+    const [dRes, oRes] = await Promise.allSettled([dTimed, oTimed]);
+    updateGoButtonState();
+
+    if (dRes.status === 'fulfilled' && oRes.status === 'fulfilled') {
+      drawRoute(mapA, 'A', dRes.value.coords, '#60a5fa');
+      drawRoute(mapB, 'B', oRes.value.coords, '#34d399');
+      renderStats(dRes.value, oRes.value);
+      renderDiffBanner(dRes.value, oRes.value);
+      renderCharts(dRes.value, oRes.value);
+      setStatus('Comparison ready.');
+    } else {
+      setStatus('Comparison failed. Check console.');
+    }
+  }
+  el('cmpGoBtn').addEventListener('click', computeCompare);
+
+  function clearAll() {
+    cmpState = { src: null, dst: null };
+    el('cmpSrcInput').value = '';
+    el('cmpDstInput').value = '';
+    clearRoutes();
+    ['A', 'B'].forEach(k => {
+      ['src', 'dst'].forEach(kind => { if (markers[k][kind]) { (k==='A'?mapA:mapB).removeLayer(markers[k][kind]); markers[k][kind] = null; } });
+    });
+    el('cmpStatsStrip').style.display = 'none';
+    el('cmpDiffBanner').style.display = 'none';
+    el('cmpCharts').style.display = 'none';
+    updateGoButtonState();
+    setStatus('Search or pick a start and end point above.');
+  }
+  el('cmpClearBtn').addEventListener('click', clearAll);
+})();
 </script>
 {% endblock %}

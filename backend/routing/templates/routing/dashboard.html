@@ -1,33 +1,141 @@
 {% extends 'routing/base.html' %}
 {% block title %}Dashboard — RouteOptima{% endblock %}
 {% block content %}
+<style>
+  /* --- CRITICAL SCROLLING FIX --- */
+  @media screen and (max-width: 768px) {
+    /* Override base.html layout locks to restore full native finger-swiping & page vertical scrolling */
+    html, body {
+      overflow: auto !important;
+      height: auto !important;
+    }
+    .app-layout {
+      height: auto !important;
+      overflow: visible !important;
+    }
+    .main-content {
+      height: auto !important;
+      overflow: visible !important;
+      padding-bottom: 2rem !important; /* Extra breathing space at the bottom */
+    }
+  }
+
+  /* --- MOBILE-FIRST LAYOUT RESPONSIVENESS OVERRIDES --- */
+  
+  /* Stats grid collapse strategy */
+  .stats-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  /* Core container section layout tracking structural splitting */
+  .dashboard-split-layout {
+    display: grid !important;
+    grid-template-columns: 1fr 320px !important;
+    gap: 1rem !important;
+    margin-bottom: 1rem !important;
+    align-items: start !important;
+  }
+
+  /* Structural containment for Quick Access items */
+  .quick-access-stack {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+
+  /* Pulse Map Loader Animation Elements */
+  .map-pulse-loader {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    color: var(--text2);
+  }
+
+  .pulse-dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--accent, #2563eb);
+    border-radius: 50%;
+    animation: mapPulse 1.5s infinite ease-in-out;
+  }
+
+  @keyframes mapPulse {
+    0% { transform: scale(0.8); opacity: 0.5; box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+    50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+    100% { transform: scale(0.8); opacity: 0.5; box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+  }
+
+  /* Micro grid for loaded graph values */
+  .graph-inner-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  @media screen and (max-width: 1024px) {
+    .dashboard-split-layout {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  @media screen and (max-width: 768px) {
+    .page-header {
+      padding: 1rem !important;
+      margin-bottom: 0.5rem !important;
+    }
+    .page-header h1 {
+      font-size: 1.5rem !important;
+    }
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 0.75rem !important;
+      padding: 0 1rem !important;
+    }
+    .page-body {
+      padding: 0 1rem !important;
+    }
+    .graph-inner-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  @media screen and (max-width: 480px) {
+    .stats-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+</style>
+
 <div class="page-header">
-  <h1>👋 Welcome{% if user.first_name %}, {{ user.first_name }}{% endif %}!</h1>
+  <h1>⬡ Welcome{% if user.first_name %}, {{ user.first_name }}{% endif %}!</h1>
   <div class="desc">Here's your route activity at a glance.</div>
 </div>
+
 <div class="page-body">
   <div class="stats-grid">
     <div class="stat-card blue"><div class="stat-icon">🗺</div><div class="stat-val">{{ total_routes }}</div><div class="stat-lbl">Total Routes</div></div>
     <div class="stat-card green"><div class="stat-icon">📏</div><div class="stat-val">{{ total_km }}</div><div class="stat-lbl">km Travelled</div></div>
     <div class="stat-card yellow"><div class="stat-icon">⚡</div><div class="stat-val">{{ avg_km }}</div><div class="stat-lbl">Avg km / Route</div></div>
-    <div class="stat-card purple"><div class="stat-icon">⭐</div><div class="stat-val">{{ saved_count }}</div><div class="stat-lbl">Saved Routes</div></div>
+    <div class="stat-card purple"><div class="stat-icon">⬡</div><div class="stat-val">{{ saved_count }}</div><div class="stat-lbl">Saved Routes</div></div>
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 320px;gap:1rem;margin-bottom:1rem">
+  <div class="dashboard-split-layout">
     <div class="card">
       <div class="card-title">Graph Status</div>
 
       <div id="graphStatus">
-        <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem">
-          <span class="status-dot dot-yellow"></span>
+        <div style="display:flex; gap:.5rem; align-items:center; margin-bottom:.5rem" id="statusHeaderWrapper">
+          <span class="status-dot dot-yellow" id="legacyStatusDot"></span>
           <span id="graphMessage">{{ graph_info.message }}</span>
         </div>
 
         <div class="progress-bar">
-          <div id="graphProgress"
-               class="progress-fill"
-               style="width:0%">
-          </div>
+          <div id="graphProgress" class="progress-fill" style="width:0%"></div>
         </div>
 
         <div id="graphStats" style="margin-top:1rem;"></div>
@@ -36,12 +144,12 @@
 
     <div class="card">
       <div class="card-title">Quick Access</div>
-      <div style="display:flex;flex-direction:column;gap:.5rem">
+      <div class="quick-access-stack">
         <a href="{% url 'map' %}"        class="btn btn-primary btn-sm">🗺 Open Route Map</a>
         <a href="{% url 'compare' %}"    class="btn btn-secondary btn-sm">⇆ Compare Routes</a>
-        <a href="{% url 'favorites' %}"  class="btn btn-secondary btn-sm">⭐ My Favourites</a>
-        <a href="{% url 'heatmap' %}"    class="btn btn-secondary btn-sm">🔥 Route Heatmap</a>
-        <a href="{% url 'leaderboard' %}" class="btn btn-secondary btn-sm">🏆 Leaderboard</a>
+        <a href="{% url 'favorites' %}"  class="btn btn-secondary btn-sm">⬡ My Favourites</a>
+        <a href="{% url 'heatmap' %}"    class="btn btn-secondary btn-sm">⚡ Route Heatmap</a>
+        <a href="{% url 'leaderboard' %}" class="btn btn-secondary btn-sm">❖ Leaderboard</a>
       </div>
     </div>
   </div>
@@ -68,10 +176,10 @@
     </div>
   </div>
   {% else %}
-  <div class="card" style="text-align:center;padding:2.5rem">
-    <div style="font-size:3rem;margin-bottom:.75rem">🗺</div>
-    <div style="font-weight:700;margin-bottom:.4rem">No routes yet</div>
-    <div style="color:var(--text2);font-size:13px;margin-bottom:1rem">Open the Route Map and compute your first route!</div>
+  <div class="card" style="text-align:center; padding:2.5rem">
+    <div style="font-size:3rem; margin-bottom:.75rem">🗺</div>
+    <div style="font-weight:700; margin-bottom:.4rem">No routes yet</div>
+    <div style="color:var(--text2); font-size:13px; margin-bottom:1rem">Open the Route Map and compute your first route!</div>
     <a href="{% url 'map' %}" class="btn btn-primary">Open Route Map</a>
   </div>
   {% endif %}
@@ -79,12 +187,9 @@
 
 <script>
 window.addEventListener("load", function(){
-    // trigger graph loading
     fetch("{% url 'warmup_graph' %}");
-
     checkGraph();
-
-    setInterval(checkGraph,1000);
+    setInterval(checkGraph, 1000);
 });
 
 function checkGraph(){
@@ -92,33 +197,35 @@ function checkGraph(){
     .then(r=>r.json())
     .then(data=>{
         const g=data.graph;
+        const messageEl = document.getElementById("graphMessage");
+        const dotEl = document.getElementById("legacyStatusDot");
+        const headerWrapper = document.getElementById("statusHeaderWrapper");
 
         if(g.loaded){
-            document.getElementById("graphMessage").innerHTML=
-            "✅ Graph Ready";
+            messageEl.innerHTML = "SYSTEM OPERATIONAL: Graph Engine Active";
+            if(dotEl) {
+                dotEl.style.display = "inline-block";
+                dotEl.className = "status-dot dot-green";
+            }
+            const activeLoader = document.getElementById("mapPulseLoaderNode");
+            if(activeLoader) activeLoader.remove();
 
             document.getElementById("graphProgress").style.width="100%";
 
             document.getElementById("graphStats").innerHTML=`
-                <div style="display:grid;
-                            grid-template-columns:repeat(3,1fr);
-                            gap:.75rem;">
-
+                <div class="graph-inner-grid">
                     <div class="card">
                         <b>${g.nodes}</b><br>
                         Nodes
                     </div>
-
                     <div class="card">
                         <b>${g.edges}</b><br>
                         Edges
                     </div>
-
                     <div class="card">
                         <b>${g.loaded_count}/${g.total}</b><br>
                         Districts
                     </div>
-
                 </div>
             `;
             return;
@@ -129,11 +236,19 @@ function checkGraph(){
             percent=(g.loaded_count/g.total)*100;
         }
 
-        document.getElementById("graphProgress").style.width=
-        percent+"%";
+        document.getElementById("graphProgress").style.width = percent+"%";
+        messageEl.innerHTML = g.message;
 
-        document.getElementById("graphMessage").innerHTML=
-        g.message;
+        if(!document.getElementById("mapPulseLoaderNode")) {
+            if(dotEl) dotEl.style.display = "none";
+            
+            const loaderNode = document.createElement("div");
+            loaderNode.id = "mapPulseLoaderNode";
+            loaderNode.className = "map-pulse-loader";
+            loaderNode.innerHTML = '<span class="pulse-dot"></span><span style="font-size:13px; color:var(--text2);">Loading Network Map...</span>';
+            
+            headerWrapper.insertBefore(loaderNode, messageEl);
+        }
     });
 }
 </script>

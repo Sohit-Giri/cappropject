@@ -1,22 +1,57 @@
 {% extends 'routing/base.html' %}
 {% block title %}Report — RouteOptima{% endblock %}
 {% block content %}
-<div class="page-header"><h1>📄 Report</h1><div class="desc">Auto-generated summary for your route activity.</div></div>
+<style>
+  /* --- RESPONSIVE LAYOUT FIXES --- */
+  @media screen and (max-width: 768px) {
+    .app-layout { height: auto !important; overflow: visible !important; }
+    .main-content { height: auto !important; overflow: visible !important; padding: 0 1rem 2rem 1rem !important; }
+    
+    /* Ensure the table doesn't break the layout on mobile */
+    .table-wrap {
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid var(--border, #e5e7eb);
+      border-radius: 8px;
+    }
+    table { min-width: 500px; }
+  }
+
+  .report-header {
+    margin-bottom: 1.5rem;
+  }
+</style>
+
+<div class="page-header">
+  <h1>📄 Report</h1>
+  <div class="desc">Auto-generated summary for your route activity.</div>
+</div>
+
 <div class="page-body">
   <div class="report-header">
-    <div style="font-size:1.5rem;font-weight:900;margin-bottom:.4rem">RouteOptima User Report</div>
-    <div style="font-size:13px;color:var(--text2)">{{ user.get_full_name|default:user.username }} · Generated {{ "now"|date:"M j, Y" }}</div>
+    <div style="font-size:1.5rem; font-weight:900; margin-bottom:.4rem">RouteOptima User Report</div>
+    <div style="font-size:13px; color:var(--text2)">{{ user.get_full_name|default:user.username }} · Generated {{ "now"|date:"M j, Y" }}</div>
   </div>
-  <div class="stats-grid" style="margin-bottom:1.25rem">
+
+  <div class="stats-grid" style="margin-bottom:1.25rem; display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:1rem;">
     <div class="stat-card blue"><div class="stat-val">{{ total }}</div><div class="stat-lbl">Total Routes</div></div>
     <div class="stat-card green"><div class="stat-val">{{ total_km }}</div><div class="stat-lbl">Total km</div></div>
     <div class="stat-card yellow"><div class="stat-val">{{ avg_km }}</div><div class="stat-lbl">Avg km/Route</div></div>
     <div class="stat-card purple"><div class="stat-val">{% if max_route %}{{ max_route.path_distance_km }}{% else %}—{% endif %}</div><div class="stat-lbl">Longest Route km</div></div>
   </div>
+
   {% if routes %}
   <div class="table-wrap card" style="padding:0">
     <table>
-      <thead><tr><th>#</th><th>From</th><th>To</th><th>Distance</th><th>Date</th></tr></thead>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Distance</th>
+          <th>Date</th>
+        </tr>
+      </thead>
       <tbody>
         {% for r in routes %}
         <tr>

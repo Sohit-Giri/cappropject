@@ -8,24 +8,30 @@ const map = L.map('map', { zoomControl: false }).setView([27.7103, 85.3222], 12)
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
 // Tile layer switcher
+// Tile layer switcher — UPDATED SUBDOMAINS CONFIGURATION TO PREVENT BLANK BOXES
 let tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 const tileLayer = L.tileLayer(tileUrl, {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-  subdomains: 'abcd', 
+  subdomains: 'abcd', // Default for Carto
   maxZoom: 20,
 }).addTo(map);
 
 (function () {
   const t = localStorage.getItem('ro_theme') || 'midnight';
   if (t === 'midnight') {
+    tileLayer.options.subdomains = 'abcd';
     tileLayer.setUrl('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
   } else {
-    tileLayer.setUrl('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
+    // CRITICAL FIX: Explicitly drops the 'd' subdomain because OpenStreetMap only accepts a, b, or c
+    tileLayer.options.subdomains = 'abc';
+    tileLayer.setUrl('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
   }
 })();
 
-let src = null, dst = null, srcM = null, dstM = null;
-let userLocM = null, userLocCircle = null; // Google-maps style location parameters
+// ONE CENTRAL CORE DATA STRUCTURE FOR COGNITIVE RETENTION
+let src = null, dst = null;
+let srcM = null, dstM = null;
+let userLocM = null, userLocCircle = null; 
 let clicking = null; 
 let selectedMode = 'all'; 
 
@@ -49,7 +55,6 @@ const mkAnimIcon = (color) => L.divIcon({
   iconSize: [12, 12], iconAnchor: [6, 6]
 });
 
-// Custom Google-Maps style pulsing location marker icon definitions
 const mkUserLocIcon = () => L.divIcon({
   className: 'user-location-marker-container',
   html: `<div class="gps-pulse-ring"></div><div class="gps-core-dot"></div>`,
@@ -66,40 +71,55 @@ function showLoad(v) {
   if (l) l.style.display = v ? 'flex' : 'none';
 }
 
+// MODIFIED TO UPDATE BOTH DATA STATE FIELDS INDEPENDENTLY WITHOUT CLEARING THE COMPANION
 function placeMarker(type, lat, lon, name) {
+  const cleanStr = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+  
   if (type === 'src') {
     if (srcM) map.removeLayer(srcM);
-    src = { lat, lon };
+    src = { lat, lon }; // Keeps core routing system in sync
+    
     srcM = L.marker([lat, lon], { icon: srcIcon }).addTo(map)
-             .bindPopup(`<b style="color:#34d399">🟢 Start</b><br><small>${name||''}</small>`);
+             .bindPopup(`<b style="color:#34d399">🟢 Start</b><br><small>${name||cleanStr}</small>`);
+    
     const el = document.getElementById('srcCoord');
-    if (el) { el.querySelector('.coord-text').textContent = name || `${lat.toFixed(5)}, ${lon.toFixed(5)}`; el.style.display = 'flex'; }
+    if (el) { 
+      el.querySelector('.coord-text').textContent = name || cleanStr; 
+      el.style.display = 'flex'; 
+    }
     const input = document.getElementById('srcInput');
-    if (input && name) input.value = name;
+    if (input) input.value = name || cleanStr;
   } else {
     if (dstM) map.removeLayer(dstM);
-    dst = { lat, lon };
+    dst = { lat, lon }; // Keeps core routing system in sync
+    
     dstM = L.marker([lat, lon], { icon: dstIcon }).addTo(map)
-             .bindPopup(`<b style="color:#f87171">🔴 End</b><br><small>${name||''}</small>`);
+             .bindPopup(`<b style="color:#f87171">🔴 End</b><br><small>${name||cleanStr}</small>`);
+    
     const el = document.getElementById('dstCoord');
-    if (el) { el.querySelector('.coord-text').textContent = name || `${lat.toFixed(5)}, ${lon.toFixed(5)}`; el.style.display = 'flex'; }
+    if (el) { 
+      el.querySelector('.coord-text').textContent = name || cleanStr; 
+      el.style.display = 'flex'; 
+    }
     const input = document.getElementById('dstInput');
-    if (input && name) input.value = name;
+    if (input) input.value = name || cleanStr;
+  }
+
+  // Auto-trigger calculation smoothly if BOTH variables exist
+  if (src && dst) {
+    computeRoute();
   }
 }
 
+// FIXED CORE CLICK EVENT HANDLER
 map.on('click', e => {
   if (!clicking) return;
   const { lat, lng } = e.latlng;
+  
   reverseGeocode(lat, lng).then(name => {
     placeMarker(clicking, lat, lng, name);
-    if (clicking === 'src') {
-      clicking = 'dst';
-      setHint('Now click the map or search for destination');
-    } else {
-      clicking = null;
-      computeRoute();
-    }
+    releaseButtonLocks();
+    clicking = null; // Instantly breaks loop so it won't force target switches
   });
 });
 
@@ -111,20 +131,17 @@ async function reverseGeocode(lat, lon) {
   } catch { return `${lat.toFixed(4)}, ${lon.toFixed(4)}`; }
 }
 
-// --- GEOLOCATION CORE INITIALIZATION SYSTEM ---
+// SYSTEM INITIALIZATION LOCATOR (Plotting only tracking points, NOT overwriting selection logic)
 function requestUserLocation() {
   if (!navigator.geolocation) {
     setHint("Geolocation services not supported by your browser framework.");
     return;
   }
   
-  setHint("Acquiring high-accuracy hardware position sync...");
-  
   navigator.geolocation.getCurrentPosition(
     async (position) => {
       const { latitude, longitude, accuracy } = position.coords;
       
-      // Plot the core Google Maps tracking components
       if (userLocM) map.removeLayer(userLocM);
       if (userLocCircle) map.removeLayer(userLocCircle);
       
@@ -139,17 +156,9 @@ function requestUserLocation() {
       userLocM = L.marker([latitude, longitude], { icon: mkUserLocIcon() }).addTo(map)
                   .bindPopup("<b>Your Current Real-time Location</b>");
       
-      // Auto-populate input forms and anchor maps viewport frame context
-      map.setView([latitude, longitude], 15);
-      const locationName = await reverseGeocode(latitude, longitude);
-      placeMarker('src', latitude, longitude, locationName || "My Current Location");
-      
-      setHint("Current hardware position designated as origin point.");
+      map.setView([latitude, longitude], 13);
     },
-    (error) => {
-      console.warn(`Position failure details: ${error.message}`);
-      setHint("Location access declined. Please click map manual points.");
-    },
+    (error) => { console.warn(`Position setup skipped: ${error.message}`); },
     { enableHighAccuracy: true, timeout: 10000 }
   );
 }
@@ -187,7 +196,6 @@ async function computeRoute() {
 
 function drawMultiRoutes(routesData) {
   clearRouteLayers();
-  
   let bounds = L.latLngBounds();
   let infoHtml = "";
 
@@ -196,16 +204,10 @@ function drawMultiRoutes(routesData) {
     if (!route || !route.path_coords || route.path_coords.length === 0) return;
 
     const latlngs = route.path_coords.map(c => [c.lat, c.lon]);
-    
-    // 1. Synchronize the original upper metrics tracking element boxes
     const prefix = activeRoutes[mode].badgeId; 
-    const badgeKm = document.getElementById(`route${prefix}Km`) || document.getElementById(`route${mode.toLowerCase()}Km`);
-    const badgeEta = document.getElementById(`route${prefix}Eta`) || document.getElementById(`route${mode.toLowerCase()}Eta`);
     
-    // Fallback lookup targets for legacy structural layouts inside context variations
-    const cardEl = badgeKm?.closest('.mode-btn') || document.querySelector(`[data-mode="${mode}"]`);
+    const cardEl = document.getElementById(`route${prefix}Km`)?.closest('.mode-btn') || document.querySelector(`[data-mode="${mode}"]`);
     if (cardEl) {
-      const textNodes = cardEl.innerHTML.replace(/<[^>]*>/g, " ").split(/\s+/).filter(Boolean);
       cardEl.innerHTML = `<div style="text-align:center; font-size:12px; color:#fff;">
         <div>${mode === 'walk' ? '🚶 Walk' : mode === 'bike' ? '🚲 Bike' : '🚗 Car'}</div>
         <strong style="color:${activeRoutes[mode].color}; font-size:14px;">${route.eta_minutes} min</strong>
@@ -213,26 +215,25 @@ function drawMultiRoutes(routesData) {
       </div>`;
     }
 
-    // 2. Draw Polyline tracks
-    activeRoutes[mode].polyline = L.polyline(latlngs, { 
-      color: activeRoutes[mode].color,
-      weight: mode === 'car' ? 5 : 4, 
-      opacity: .85, 
-      dashArray: activeRoutes[mode].dash,
-      lineJoin: 'round', 
-      lineCap: 'round' 
-    }).addTo(map);
+// 2. Draw Polyline tracks (UPDATED FOR TRANSPARENCY & LEGIBILITY)
+activeRoutes[mode].polyline = L.polyline(latlngs, { 
+  color: activeRoutes[mode].color,
+  weight: mode === 'car' ? 6 : 4, // Slightly adjusted width
+  opacity: 0.45,                 // CRITICAL: Lowered from 0.85 to 0.45 so roads show through perfectly
+  dashArray: activeRoutes[mode].dash,
+  lineJoin: 'round', 
+  lineCap: 'round',
+  interactive: false             // Prevents the line from stealing mouse clicks from the map/roads underneath
+}).addTo(map);
 
     bounds.extend(activeRoutes[mode].polyline.getBounds());
 
-    // 3. Kick off physics loop animation sequences
     if (latlngs.length > 1) {
       const pulseM = L.marker(latlngs[0], { icon: mkAnimIcon(activeRoutes[mode].color) }).addTo(map);
       activeRoutes[mode].pulseMarker = pulseM;
       animateMarkerAlongPath(pulseM, latlngs, route.speed_kmh);
     }
 
-    // 4. Formulate comparative dashboard widgets panel metrics
     infoHtml += `
       <div class="mode-summary-card">
         <div class="mode-summary-header">
@@ -255,7 +256,6 @@ function drawMultiRoutes(routesData) {
     map.fitBounds(bounds, { padding: [40, 40] });
   }
 
-  // Inject optimized interactive comparison layout panel 
   const container = document.getElementById('routeResult');
   if (container) {
     container.innerHTML = `
@@ -324,32 +324,26 @@ function clearRouteLayers() {
 }
 
 function clearRoute() {
-  if (srcM) map.removeLayer(srcM);
-  if (dstM) map.removeLayer(dstM);
-  clearRouteLayers();
-  
-  src = dst = srcM = dstM = null;
-  const container = document.getElementById('routeResult');
-  if (container) {
-    container.style.display = 'none';
-    container.innerHTML = '';
-  }
-  
-  if (document.getElementById('srcCoord')) document.getElementById('srcCoord').style.display = 'none';
-  if (document.getElementById('dstCoord')) document.getElementById('dstCoord').style.display = 'none';
-  if (document.getElementById('srcInput')) document.getElementById('srcInput').value = '';
-  if (document.getElementById('dstInput')) document.getElementById('dstInput').value = '';
-  
-  // Restore basic placeholder layout strings on execution reset
-  document.querySelectorAll('.mode-btn').forEach(btn => {
-    const mode = btn.dataset.mode;
-    if(mode) {
-      btn.innerHTML = `<div>${mode === 'walk' ? '🚶 Walk' : mode === 'bike' ? '🚲 Bike' : '🚗 Car'}</div><small>-- min</small><br><small style="font-size:9px;color:#9ca3af;">-- km</small>`;
-    }
-  });
+    document.getElementById('srcInput').value = '';
+    document.getElementById('dstInput').value = '';
+    
+    const srcCoord = document.getElementById('srcCoord');
+    const dstCoord = document.getElementById('dstCoord');
+    if (srcCoord) srcCoord.style.display = 'none';
+    if (dstCoord) dstCoord.style.display = 'none';
+    
+    const routeResult = document.getElementById('routeResult');
+    if (routeResult) routeResult.style.display = 'none';
 
-  clicking = null;
-  setHint('Search or click map to set start point');
+    if (srcM) { map.removeLayer(srcM); srcM = null; }
+    if (dstM) { map.removeLayer(dstM); dstM = null; }
+    
+    clearRouteLayers();
+
+    src = null;
+    dst = null;
+    
+    setHint("Search or click map to set start point");
 }
 
 function saveRoute() {
@@ -371,7 +365,6 @@ function shareRoute() {
   navigator.clipboard.writeText(url).then(() => setHint('Share link copied to clipboard!'));
 }
 
-// Mode button triggers
 document.querySelectorAll('.mode-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
@@ -380,7 +373,6 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
   });
 });
 
-// Health check
 async function checkHealth() {
   const dot  = document.getElementById('statusDot');
   const lbl  = document.getElementById('statusLbl');
@@ -405,7 +397,8 @@ async function checkHealth() {
 }
 checkHealth();
 
-// Build search UIs after DOM ready and request device geolocation updates automatically
+
+// UI AUTOCOMPLETE LINK INTEGRATION (UPDATED WITH DROPDOWN OVERRIDE FIX)
 document.addEventListener('DOMContentLoaded', () => {
   const srcInput   = document.getElementById('srcInput');
   const srcResults = document.getElementById('srcResults');
@@ -414,21 +407,144 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (srcInput && srcResults) {
     buildSearchUI(srcInput, srcResults, p => {
+      // CRITICAL FIX: If a map selection mode was active, cancel it immediately
+      releaseButtonLocks();
+      clicking = null;
+
       placeMarker('src', p.lat, p.lon, p.name);
       map.setView([p.lat, p.lon], 15);
-      if (dst) computeRoute();
     });
   }
   if (dstInput && dstResults) {
     buildSearchUI(dstInput, dstResults, p => {
+      // CRITICAL FIX: If a map selection mode was active, cancel it immediately
+      releaseButtonLocks();
+      clicking = null;
+
       placeMarker('dst', p.lat, p.lon, p.name);
       map.setView([p.lat, p.lon], 15);
-      if (src) computeRoute();
     });
   }
 
-  // Trigger position hardware request on page configuration startup
+  // Draw real-time alignment dot, but don't hijack input targets!
   setTimeout(requestUserLocation, 1200);
 });
 
-setHint('Search for a place or click on the map to start');
+// --- INTERACTIVE DEFENSE STATE MACHINES (FIXED) ---
+let dynamicClickingState = {
+    isAwaiting: false,
+    activeButton: null,
+    originalText: ""
+};
+
+function handleMapClickToggle(mode, buttonId, message) {
+    // If user clicks a different map selector button, release the old button lock first
+    if (dynamicClickingState.activeButton && dynamicClickingState.activeButton.id !== buttonId) {
+        releaseButtonLocks();
+    }
+
+    const targetBtn = document.getElementById(buttonId);
+    clicking = mode; 
+    setHint(message);
+    
+    dynamicClickingState.isAwaiting = true;
+    dynamicClickingState.activeButton = targetBtn;
+    dynamicClickingState.originalText = "📌 Click on map";
+    
+    targetBtn.disabled = true;
+    targetBtn.innerHTML = `<span>⏳ Selecting...</span>`;
+    document.getElementById('map').style.cursor = 'crosshair';
+}
+
+function releaseButtonLocks() {
+    if (dynamicClickingState.activeButton) {
+        dynamicClickingState.activeButton.disabled = false;
+        dynamicClickingState.activeButton.innerHTML = dynamicClickingState.originalText;
+    }
+    document.getElementById('map').style.cursor = '';
+    dynamicClickingState.isAwaiting = false;
+    dynamicClickingState.activeButton = null;
+}
+
+// LIVE GEOLOCATION TRIGGER ASSIGNMENT PIPELINE (NOW UNLOCKED)
+function useCurrentLocation(targetField) {
+    const btnId = targetField === 'src' ? 'btn-start-current' : 'btn-dest-current';
+    const targetBtn = document.getElementById(btnId);
+    const originalText = "📍 Current Loc";
+
+    if (!navigator.geolocation) {
+        alert("Geolocation not supported by this browser.");
+        return;
+    }
+
+    // Cancel map picking mode if geolocation is chosen instead
+    releaseButtonLocks();
+    clicking = null;
+
+    targetBtn.disabled = true;
+    targetBtn.innerHTML = `<span>⏳ Fetching...</span>`;
+    setHint("Fetching your live device coordinates...");
+
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            
+            map.setView([lat, lon], 16);
+            const locationName = await reverseGeocode(lat, lon);
+            
+            placeMarker(targetField, lat, lon, locationName || "My Location");
+
+            targetBtn.disabled = false;
+            targetBtn.innerHTML = originalText;
+        },
+        (error) => {
+            setHint("Location capture blocked or unavailable.");
+            targetBtn.disabled = false;
+            targetBtn.innerHTML = originalText;
+            console.error(error);
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+    );
+}
+
+// --- NEW CONTROL: LEAFLET SHOW LOCATION BUTTON (ABOVE ZOOM) ---
+const LocationControl = L.Control.extend({
+    options: { position: 'bottomright' },
+    onAdd: function (map) {
+        const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-user-location-ctrl');
+        container.style.backgroundColor = 'white';
+        container.style.width = '30px';
+        container.style.height = '30px';
+        container.style.cursor = 'pointer';
+        container.style.display = 'flex';
+        container.style.alignItems = 'center';
+        container.style.justifyContent = 'center';
+        container.style.fontSize = '16px';
+        container.style.marginBottom = '2px'; // Leaves a gap right above the zoom control
+        container.title = "Show My Location";
+        container.innerHTML = "⟟";
+
+        // Handle dark theme styling dynamically
+        const t = localStorage.getItem('ro_theme') || 'midnight';
+        if (t === 'midnight') {
+            container.style.backgroundColor = '#1f2937';
+            container.style.border = '1px solid #374151';
+            container.style.color = '#fff';
+        }
+
+        L.DomEvent.on(container, 'click', function (e) {
+            L.DomEvent.stopPropagation(e);
+            if (userLocM) {
+                map.setView(userLocM.getLatLng(), 16);
+            } else {
+                requestUserLocation();
+            }
+        });
+
+        return container;
+    }
+});
+
+// Register and inject the new location tracker control onto the map view canvas
+map.addControl(new LocationControl());

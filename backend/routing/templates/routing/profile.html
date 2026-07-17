@@ -40,18 +40,12 @@
     gap: 0.5rem;
   }
 
-  /* Two-column layout matching the base system dashboard grid */
+  /* Two-column layout */
   .profile-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
     align-items: start;
-  }
-
-  @media (max-width: 900px) {
-    .profile-grid {
-      grid-template-columns: 1fr;
-    }
   }
 
   .card {
@@ -79,7 +73,7 @@
     margin-bottom: 0.5rem;
   }
 
-  /* Clean Info Stack (Styled identically to nav links in base.html) */
+  /* --- RESTORED: Clean Info Stack --- */
   .info-links-list {
     display: flex;
     flex-direction: column;
@@ -107,6 +101,7 @@
   .info-link-item .icon {
     font-size: 14px;
   }
+  /* ---------------------------------- */
 
   /* User identity component */
   .profile-identity-strip {
@@ -216,37 +211,23 @@
     border: 1px solid transparent;
   }
 
-  .btn-primary {
-    background: var(--accent);
-    color: #ffffff;
-  }
+  .btn-primary { background: var(--accent); color: #ffffff; }
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 12px var(--card-glow); }
+  .btn-danger { background: transparent; border-color: var(--red); color: var(--red); }
+  .btn-danger:hover { background: var(--red); color: #ffffff; }
 
-  .btn-primary:hover {
-    background: var(--accent2);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px var(--card-glow);
-  }
-
-  .btn-danger {
-    background: transparent;
-    border-color: var(--red);
-    color: var(--red);
-  }
-
-  .btn-danger:hover {
-    background: var(--red);
-    color: #ffffff;
-  }
-
-  .message {
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
-    margin-bottom: 1rem;
-  }
+  .message { padding: 0.75rem 1rem; border-radius: 8px; font-size: 13px; font-weight: 500; margin-bottom: 1rem; }
   .message.error { background: rgba(220, 38, 38, 0.1); color: var(--red); border: 1px solid rgba(220, 38, 38, 0.2); }
   .message.success { background: rgba(22, 163, 74, 0.1); color: var(--green); border: 1px solid rgba(22, 163, 74, 0.2); }
+
+  /* --- ADDED: MOBILE SCROLLING FIXES --- */
+  @media (max-width: 900px) {
+    .app-layout { height: auto !important; overflow: visible !important; }
+    .main-content { height: auto !important; overflow: visible !important; padding: 0 1rem 2rem 1rem !important; }
+    
+    .profile-grid { grid-template-columns: 1fr; }
+    .form-row { flex-direction: column; gap: 0; }
+  }
 </style>
 
 <div class="page-header">
@@ -264,9 +245,8 @@
   {% if messages %}{% for m in messages %}<div class="message {{ m.tags }}">{{ m }}</div>{% endfor %}{% endif %}
   
   <div class="profile-grid">
-    <!-- LEFT COLUMN: Account Details & Editing Elements -->
+    <!-- LEFT COLUMN -->
     <div class="profile-left-col">
-      <!-- Identity & Stats Overview -->
       <div class="card">
         <div class="profile-identity-strip">
           <div class="profile-avatar">{{ user.username|slice:":2"|upper }}</div>
@@ -286,7 +266,6 @@
         </div>
       </div>
 
-      <!-- Modify Credentials Form Box -->
       <div class="card">
         <div class="card-title">Edit Profile</div>
         <form method="POST">
@@ -314,7 +293,7 @@
       </div>
     </div>
 
-    <!-- RIGHT COLUMN: Relocated System Info Elements (Styled to match the Clean Sidebar Layout) -->
+    <!-- RIGHT COLUMN -->
     <div class="profile-right-col">
       <div class="card">
         <div class="card-title">System Information</div>
