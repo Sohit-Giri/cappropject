@@ -92,5 +92,8 @@ async function deleteSaved(id) {
   const j = await r.json();
   if (j.status === 'ok') document.getElementById('saved-'+id)?.remove();
 }
+
+  document.documentElement.setAttribute('data-theme', 'parchment');
+
 </script>
 {% endblock %}

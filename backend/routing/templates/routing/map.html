@@ -352,5 +352,7 @@ document.getElementById('routeResult').querySelectorAll('#routeNodes').forEach((
 document.getElementById('replayBtn').addEventListener('click', e=>{
   if(window._lastRouteId){ e.currentTarget.href='/replay/'+window._lastRouteId+'/'; }
 });
+  document.documentElement.setAttribute('data-theme', 'parchment');
+
 </script>
 {% endblock %}
