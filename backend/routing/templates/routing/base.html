@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'routing/css/style.css' %}">
+  <link rel="icon" type="image/x-icon" href="{% static 'routing/images/favicon.ico' %}">
   <script src="{% static 'routing/js/theme.js' %}"></script>
   {% block head %}{% endblock %}
 
@@ -244,7 +245,7 @@
         <a href="{% url 'profile' %}" class="user-card" style="width: 100%;">
           <div class="user-avatar">{{ user.username|slice:":2"|upper }}</div>
           <div>
-            <div class="user-name" style="margin: 0;">{{ user.get_short_name|default:user.username }}</div>
+            <div class="user-name" style="margin: 0;">Profile</div>
           </div>
         </a>
       </div>

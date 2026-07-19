@@ -94,7 +94,7 @@ def forgot_password_view(request):
         email = request.POST.get('email', '').strip()
         try:
             user = User.objects.get(email=email)
-            otp_record = UserOTP.generate_for_user(user)
+            otp_record = UserOTP.generate_reset(user)
             
             # Send Email containing the Code
             subject = "Your RouteOptima Password Reset OTP"

@@ -310,14 +310,32 @@
     <form method="POST" id="loginForm">
       {% csrf_token %}
 
-      <div class="form-group">
+      <!-- Auth input wrapper containers -->
+      <div id="emailSection" class="form-group">
         <label>Email Address</label>
         <input
           type="email"
+          id="emailField"
           name="email"
           required
           autofocus
           placeholder="name@example.com">
+      </div>
+
+      <div id="usernameSection" class="form-group" style="display: none;">
+        <label>Username</label>
+        <input
+          type="text"
+          id="usernameField"
+          name="username"
+          placeholder="Enter your username">
+      </div>
+
+      <!-- Option to switch entry field layouts -->
+      <div style="margin-top: -0.75rem; margin-bottom: 1.25rem;">
+        <button type="button" id="toggleAuthMethodBtn" class="forgot-link" style="background: none; border: none; padding: 0; cursor: pointer;">
+          Or use username instead
+        </button>
       </div>
 
       <div class="form-group" style="margin-bottom:1rem;">
@@ -366,6 +384,38 @@
 
 
 <script>
+  // Dynamic handling for layout entry configuration toggles
+  document.getElementById('toggleAuthMethodBtn').addEventListener('click', function() {
+    const emailSection = document.getElementById('emailSection');
+    const usernameSection = document.getElementById('usernameSection');
+    const emailField = document.getElementById('emailField');
+    const usernameField = document.getElementById('usernameField');
+    
+    if (emailSection.style.display === 'none') {
+      // Toggle display wrappers
+      emailSection.style.display = 'flex';
+      usernameSection.style.display = 'none';
+      
+      // Fix field requirements state parameters
+      usernameField.removeAttribute('required');
+      emailField.setAttribute('required', 'true');
+      
+      this.textContent = "Or use username instead";
+      emailField.focus();
+    } else {
+      // Toggle display wrappers
+      emailSection.style.display = 'none';
+      usernameSection.style.display = 'flex';
+      
+      // Fix field requirements state parameters
+      emailField.removeAttribute('required');
+      usernameField.setAttribute('required', 'true');
+      
+      this.textContent = "Or use email instead";
+      usernameField.focus();
+    }
+  });
+
   document.getElementById('togglePasswordBtn').addEventListener('click', function() {
     const passwordField = document.getElementById('passwordField');
     if (passwordField.type === "password") {
@@ -377,7 +427,7 @@
     }
   });
 
-  // Handle submit with an intentional 2-second delay
+  // Handle submit with an intentional loading sequence delay
   document.getElementById('loginForm').addEventListener('submit', function(e) {
     const form = this;
     const btn = document.getElementById('loginSubmitBtn');
@@ -405,7 +455,7 @@
     btn.disabled = true;
     btn.innerText = randomPhrase;
 
-    // 3. Wait for 2 seconds (2000ms) before sending the data to the backend
+    // 3. Wait before sending the data to the backend
     setTimeout(() => {
       form.submit();
     }, 1100);
@@ -414,6 +464,5 @@
   // Enforcing classic parchment default style environment fallback
   document.documentElement.setAttribute('data-theme', 'parchment');
 </script>
-
 
 {% endblock %}
