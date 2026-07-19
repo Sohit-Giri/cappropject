@@ -135,20 +135,24 @@ function requestUserLocation() {
     return;
   }
   
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const { latitude, longitude, accuracy } = position.coords;
-      
-      if (userLocM) map.removeLayer(userLocM);
-      if (userLocCircle) map.removeLayer(userLocCircle);
-      
-      userLocCircle = L.circle([latitude, longitude], {
-        radius: accuracy || 30,
-        color: '#3b82f6',
-        fillColor: '#3b82f6',
-        fillOpacity: 0.15,
-        weight: 1
-      }).addTo(map);
+navigator.geolocation.getCurrentPosition(
+  async (position) => {
+    const { latitude, longitude, accuracy } = position.coords;
+    
+    // FIX: Cap the radius at 1000 meters (1km) so it doesn't cover the whole city
+    // If accuracy is missing, default to 50 meters
+    const displayRadius = Math.min(accuracy || 50, 1000);
+    
+    if (userLocM) map.removeLayer(userLocM);
+    if (userLocCircle) map.removeLayer(userLocCircle);
+    
+    userLocCircle = L.circle([latitude, longitude], {
+      radius: displayRadius, // Use the capped radius here
+      color: '#3b82f6',
+      fillColor: '#3b82f6',
+      fillOpacity: 0.15,
+      weight: 1
+    }).addTo(map);
       
       userLocM = L.marker([latitude, longitude], { icon: mkUserLocIcon() }).addTo(map)
                   .bindPopup("<b>Your Current Real-time Location</b>");
