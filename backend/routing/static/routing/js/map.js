@@ -17,15 +17,12 @@ const tileLayer = L.tileLayer(tileUrl, {
 }).addTo(map);
 
 (function () {
-  const t = localStorage.getItem('ro_theme') || 'midnight';
-  if (t === 'midnight') {
-    tileLayer.options.subdomains = 'abcd';
-    tileLayer.setUrl('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
-  } else {
+  const t = localStorage.getItem('ro_theme');
+
     // CRITICAL FIX: Explicitly drops the 'd' subdomain because OpenStreetMap only accepts a, b, or c
     tileLayer.options.subdomains = 'abc';
     tileLayer.setUrl('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-  }
+
 })();
 
 // ONE CENTRAL CORE DATA STRUCTURE FOR COGNITIVE RETENTION
