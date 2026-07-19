@@ -133,3 +133,5 @@ CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SAMESITE = "Lax"
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# In settings.py
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
