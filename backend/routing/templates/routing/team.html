@@ -61,16 +61,11 @@
     text-decoration: none;
   }
 
-  .landing-logo .icon {
+  .landing-logo img {
     width: 36px;
     height: 36px;
-    background: var(--accent);
     border-radius: 9px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    color: #ffffff;
+    object-fit: cover;
   }
 
   .landing-logo .name {
@@ -215,6 +210,10 @@
     text-align: center;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 310px;
   }
 
   .team-card:hover {
@@ -257,13 +256,14 @@
     color: var(--accent);
     line-height: 1.4;
     margin-bottom: 1.25rem;
-    font-weight: 500;
+    font-weight: 600;
   }
 
   .team-card .email {
     font-size: 12px;
     color: var(--text3);
     word-break: break-all;
+    margin-top: auto;
   }
 
   /* ==========================================================================
@@ -347,13 +347,14 @@
 
     .team-card {
       padding: 2rem 1.25rem;
+      min-height: auto;
     }
   }
 </style>
 
 <nav class="landing-nav">
   <a href="{% url 'landing' %}" class="landing-logo">
-    <div class="icon">&#9672;</div>
+    <img src="https://i.ibb.co/XfTv4byV/gemini-svg.jpg" alt="RouteOptima Logo">
     <div><div class="name">RouteOptima</div></div>
   </a>
   <div class="nav-links">
@@ -388,38 +389,53 @@
     </div>
 
     <div class="team-grid">
+      <!-- Team Lead -->
       <div class="team-card team-card-leader">
-        <div class="team-avatar team-avatar-leader">SK</div>
-        <h3>Sudip KC</h3>
-        <div class="role">Project Leader<br>System Integration</div>
+        <div>
+          <div class="team-avatar team-avatar-leader">SK</div>
+          <h3>Sudip KC</h3>
+          <div class="role">Project Manager &amp;<br>Backend Engineering Lead</div>
+        </div>
         <div class="email">sudip23012002@iimscollege.edu.np</div>
       </div>
 
+      <!-- Sohit Giri -->
       <div class="team-card">
-        <div class="team-avatar">SG</div>
-        <h3>Sohit Giri</h3>
-        <div class="role">Backend Architect<br>API & Database</div>
+        <div>
+          <div class="team-avatar">SG</div>
+          <h3>Sohit Giri</h3>
+          <div class="role">Database Developer &amp;<br>Server Deployment Manager</div>
+        </div>
         <div class="email">sohit23012005@iimscollege.edu.np</div>
       </div>
 
+      <!-- Muskan Khadka -->
       <div class="team-card">
-        <div class="team-avatar">MK</div>
-        <h3>Muskan Khadka</h3>
-        <div class="role">Map & Network<br>GIS Modelling</div>
+        <div>
+          <div class="team-avatar">MK</div>
+          <h3>Muskan Khadka</h3>
+          <div class="role">Full-Stack Developer<br>(Core Backend Engineer)</div>
+        </div>
         <div class="email">muskan23012027@iimscollege.edu.np</div>
       </div>
 
+      <!-- Mahima Parajuli -->
       <div class="team-card">
-        <div class="team-avatar">MP</div>
-        <h3>Mahima Parajuli</h3>
-        <div class="role">Algorithm Engineer<br>Dijkstra SPF</div>
+        <div>
+          <div class="team-avatar">MP</div>
+          <h3>Mahima Parajuli</h3>
+          <div class="role">Frontend Engineer, <br>GIS &amp; Map Modeler</div>
+        </div>
         <div class="email">mahima23012049@iimscollege.edu.np</div>
       </div>
 
+      <!-- Apekshya Basnyat -->
       <div class="team-card">
-        <div class="team-avatar">AB</div>
-        <h3>Apekshya Basnyat</h3>
-        <div class="role">Frontend Dev<br>UI / Simulation</div>
+        <div>
+          <div class="team-avatar">AB</div>
+          <h3>Apekshya Basnyat</h3>
+          <div class="role">Frontend Developer, Algorithm Implementation &amp;<br>QA Software Tester</div>
+        </div>
         <div class="email">apekshya23012030@iimscollege.edu.np</div>
       </div>
     </div>
