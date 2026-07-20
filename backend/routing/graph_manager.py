@@ -31,13 +31,12 @@ class GraphManager:
             cache_dir = str(settings.GRAPH_CACHE_DIR)
 
         self._districts = districts
+        self._loaded_count = 0  # <--- FIX: Reset counter before loading loop!
+
         os.makedirs(cache_dir, exist_ok=True)
         graphs = []
 
         for place in districts:
-            # Example:
-            # Kathmandu, Bagmati Province, Nepal
-            # -> kathmandu_bagmati_province_nepal
             safe = (
                 place.replace(",", "")
                 .replace(" ", "_")
@@ -52,7 +51,6 @@ class GraphManager:
             )
 
             try:
-                # Force it to check the new file first instead of the dynamic 'path'
                 if os.path.exists(fallback_path):
                     print(f"LOADING LOCALIZED MESH FILE: {fallback_path}")
                     logger.info(f"Loading cached graph: {fallback_path}")
@@ -122,14 +120,13 @@ class GraphManager:
         return self._graph is not None
 
     def get_info(self):
+        total = len(self._districts)
+        
         if not self.is_loaded():
-            loaded = self._loaded_count
-            total = len(self._districts)
-
             return {
                 "loaded": False,
-                "message": f"Loading districts ({loaded}/{total})...",
-                "loaded_count": loaded,
+                "message": f"Loading districts ({self._loaded_count}/{total})...",
+                "loaded_count": self._loaded_count,
                 "total": total,
             }
 
@@ -139,5 +136,5 @@ class GraphManager:
             "nodes": len(self._graph.nodes),
             "edges": len(self._graph.edges),
             "loaded_count": self._loaded_count,
-            "total": len(self._districts),
+            "total": total,
         }
