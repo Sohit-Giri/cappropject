@@ -49,28 +49,16 @@
 
 {% block scripts %}
 <script>
+document.documentElement.setAttribute('data-theme', 'parchment');
   // 1. Initialize Map
   const m = L.map('heatmap', { zoomControl: true }).setView([27.7103, 85.3222], 12);
   
-  // 2. Define standard Tile Layer
-  // Start with a default, but it will be overridden by the theme logic immediately
-  const tileLayer = L.tileLayer('', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+// 2. Define standard Light Tile Layer
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    subdomains: 'abc',
     maxZoom: 19
   }).addTo(m);
-
-  // 3. Theme-aware Layer Switcher Logic (consistent with map.html)
-  (function () {
-    const t = localStorage.getItem('ro_theme') || 'midnight';
-    if (t === 'midnight') {
-      tileLayer.options.subdomains = 'abcd';
-      tileLayer.setUrl('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
-    } else {
-      // CRITICAL FIX: Explicitly drops the 'd' subdomain for OSM
-      tileLayer.options.subdomains = 'abc';
-      tileLayer.setUrl('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-    }
-  })();
 
   // 4. Load Heatmap Data
   fetch('/api/heatmap-data/', {credentials:'same-origin'})
@@ -87,7 +75,6 @@
       }).addTo(m);
     });
 
-      document.documentElement.setAttribute('data-theme', 'parchment');
-
+  // REMOVED: document.documentElement.setAttribute('data-theme', 'parchment');
 </script>
 {% endblock %}

@@ -239,22 +239,17 @@
 {% block scripts %}
 <script src="{% static 'routing/js/map.js' %}"></script>
 <script>
+document.documentElement.setAttribute('data-theme', 'parchment');
 (function () {
   const mapA = L.map('cmpMapA').setView([27.7103, 85.3222], 12);
   const mapB = L.map('cmpMapB').setView([27.7103, 85.3222], 12);
 
-  function getTileConfig() {
-    const t = localStorage.getItem('ro_theme') || 'midnight';
-    if (t === 'midnight') {
-      return { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', subdomains: 'abcd' };
-    }
-    return { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', subdomains: 'abc' };
-  }
-  const tcfg = getTileConfig();
+const osmUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
   const attr = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
-  L.tileLayer(tcfg.url, { attribution: attr, subdomains: tcfg.subdomains, maxZoom: 20 }).addTo(mapA);
-  L.tileLayer(tcfg.url, { attribution: attr, subdomains: tcfg.subdomains, maxZoom: 20 }).addTo(mapB);
 
+  L.tileLayer(osmUrl, { attribution: attr, subdomains: 'abc', maxZoom: 19 }).addTo(mapA);
+  L.tileLayer(osmUrl, { attribution: attr, subdomains: 'abc', maxZoom: 19 }).addTo(mapB);
+  
   const triggerMapResize = () => { mapA.invalidateSize(); mapB.invalidateSize(); };
   window.addEventListener('resize', triggerMapResize);
   setTimeout(triggerMapResize, 50);
@@ -525,8 +520,6 @@
     setTimeout(triggerMapResize, 100);
   });
 })();
-
-  document.documentElement.setAttribute('data-theme', 'parchment');
 
 </script>
 {% endblock %}
