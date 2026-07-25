@@ -1,58 +1,181 @@
 {% extends 'routing/base.html' %}
 {% load static %}
 {% block title %}Replay Route — RouteOptima{% endblock %}
+
 {% block head %}
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    @media screen and (max-width: 768px) {
+      .app-layout { height: auto !important; overflow: visible !important; }
+      .main-content { height: auto !important; overflow: visible !important; padding: 0 !important; }
+      .map-wrapper { height: 60vh !important; border-radius: 0 !important; }
+    }
+
+    .map-wrapper {
+      height: calc(100vh - 150px);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border, #e5e7eb);
+      position: relative;
+      background: var(--bg0, #ffffff);
+    }
+
+    /* Car Marker Styling */
+    .car-marker {
+      font-size: 26px;
+      line-height: 1;
+      text-align: center;
+      transition: transform 0.1s linear;
+      filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.4));
+    }
+  </style>
 {% endblock %}
+
 {% block content %}
-<div class="page-header">
+<div class="page-header" style="padding: 1rem 1.75rem;">
   <h1>▶ Route Replay</h1>
   <div class="desc">{{ route.src_name|default:"Start" }} → {{ route.dst_name|default:"End" }} · {{ route.path_distance_km }} km · {{ route.computed_at|date:"M j, Y H:i" }}</div>
 </div>
-<div style="padding:.5rem 1.75rem 1rem;height:calc(100vh - 130px)">
-  <div style="height:100%;border-radius:12px;overflow:hidden;border:1px solid var(--border);position:relative">
-    <div id="replayMap" style="width:100%;height:100%"></div>
-    <div style="position:absolute;bottom:1rem;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:.5rem">
-      <button class="btn btn-primary btn-sm" onclick="startReplay()">▶ Play</button>
-      <button class="btn btn-ghost btn-sm" onclick="resetReplay()">↺ Reset</button>
+
+<div style="padding: 0 1.75rem 1.75rem">
+  <div class="map-wrapper">
+    <div id="replayMap" style="width:100%; height:100%"></div>
+    
+    <!-- Controls -->
+    <div style="position:absolute; bottom:1.25rem; left:50%; transform:translateX(-50%); z-index:1000; display:flex; gap:.5rem; background:var(--bg0, #ffffff); padding:.5rem .75rem; border-radius:10px; border:1px solid var(--border, #e5e7eb); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+      <button class="btn btn-primary btn-sm" id="playBtn" onclick="startReplay()">▶ Play</button>
+      <button class="btn btn-ghost btn-sm" id="resetBtn" onclick="resetReplay()">↺ Reset</button>
     </div>
   </div>
 </div>
 {% endblock %}
+
 {% block scripts %}
 <script>
-const m = L.map('replayMap').setView([{{ route.src_lat }},{{ route.src_lon }}], 14);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(m);
-// Simple A→B line (real path requires storing coords, this is a placeholder)
-const src = [{{ route.src_lat }},{{ route.src_lon }}];
-const dst = [{{ route.dst_lat }},{{ route.dst_lon }}];
-const fullLine = L.polyline([src,dst],{color:'#3b82f6',weight:4,opacity:.4,dashArray:'8 4'}).addTo(m);
-m.fitBounds(fullLine.getBounds(),{padding:[60,60]});
-const marker = L.marker(src).addTo(m).bindPopup('{{ route.src_name|default:"Start" }}').openPopup();
-let animLine = null, frame = null;
+// 1. Robust Path Parsing
+let rawCoords = [];
+try {
+    let parsed = JSON.parse('{{ route.path_coords|escapejs }}');
+    if (typeof parsed === 'string') parsed = JSON.parse(parsed); // handle double-encoded JSON
+    rawCoords = parsed;
+} catch (e) {
+    console.warn("Could not parse path_coords JSON, falling back to endpoints:", e);
+}
 
+// Normalize coordinate formats ([lat, lng] vs {lat, lng})
+let pathCoords = [];
+if (Array.isArray(rawCoords) && rawCoords.length > 0) {
+    pathCoords = rawCoords.map(pt => {
+        if (Array.isArray(pt)) return [parseFloat(pt[0]), parseFloat(pt[1])];
+        if (pt && pt.lat !== undefined && pt.lng !== undefined) return [parseFloat(pt.lat), parseFloat(pt.lng)];
+        if (pt && pt.lat !== undefined && pt.lon !== undefined) return [parseFloat(pt.lat), parseFloat(pt.lon)];
+        return null;
+    }).filter(pt => pt !== null && !isNaN(pt[0]) && !isNaN(pt[1]));
+}
+
+// Fallback if coordinates missing
+if (pathCoords.length < 2) {
+    pathCoords = [
+        [{{ route.src_lat }}, {{ route.src_lon }}],
+        [{{ route.dst_lat }}, {{ route.dst_lon }}]
+    ];
+}
+
+const startPt = pathCoords[0];
+const endPt = pathCoords[pathCoords.length - 1];
+
+// 2. Initialize Map
+const m = L.map('replayMap', { zoomControl: true }).setView(startPt, 14);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    subdomains: 'abc',
+    maxZoom: 19
+}).addTo(m);
+
+// 3. Draw Base Route Polyline
+const baseLine = L.polyline(pathCoords, {
+    color: '#3b82f6',
+    weight: 5,
+    opacity: 0.6,
+    dashArray: '8, 6'
+}).addTo(m);
+
+m.fitBounds(baseLine.getBounds(), { padding: [50, 50] });
+
+// Start / End Markers
+L.marker(startPt).addTo(m).bindPopup('<b>Start:</b> {{ route.src_name|default:"Start" }}');
+L.marker(endPt).addTo(m).bindPopup('<b>End:</b> {{ route.dst_name|default:"End" }}');
+
+// 4. Custom Animated Car Icon
+const carIcon = L.divIcon({
+    className: 'car-marker',
+    html: '🚗',
+    iconSize: [32, 32],
+    iconAnchor: [16, 16]
+});
+
+const carMarker = L.marker(startPt, { icon: carIcon, zIndexOffset: 2000 }).addTo(m);
+let activePolyline = null;
+let animationId = null;
+
+// Replay Engine
 function startReplay() {
-  if (animLine) m.removeLayer(animLine);
-  animLine = L.polyline([src],{color:'#34d399',weight:5}).addTo(m);
-  let t = 0;
-  function step() {
-    t = Math.min(t + 0.015, 1);
-    const lat = src[0] + (dst[0]-src[0])*t;
-    const lon = src[1] + (dst[1]-src[1])*t;
-    marker.setLatLng([lat,lon]);
-    animLine.addLatLng([lat,lon]);
-    if (t < 1) frame = requestAnimationFrame(step);
-    else { marker.setLatLng(dst); marker.bindPopup('{{ route.dst_name|default:"End" }}').openPopup(); }
-  }
-  cancelAnimationFrame(frame);
-  step();
+    resetReplay();
+
+    activePolyline = L.polyline([startPt], {
+        color: '#10b981',
+        weight: 6,
+        opacity: 0.9
+    }).addTo(m);
+
+    let currentSegment = 0;
+    let t = 0;
+    const speed = 0.08; // Adjust playback speed here
+
+    function step() {
+        if (currentSegment >= pathCoords.length - 1) {
+            carMarker.setLatLng(endPt);
+            carMarker.bindPopup('<b>Arrived at Destination!</b>').openPopup();
+            return;
+        }
+
+        const p1 = pathCoords[currentSegment];
+        const p2 = pathCoords[currentSegment + 1];
+
+        t += speed;
+
+        if (t >= 1) {
+            t = 0;
+            currentSegment++;
+            activePolyline.addLatLng(p2);
+            carMarker.setLatLng(p2);
+        } else {
+            const currentLat = p1[0] + (p2[0] - p1[0]) * t;
+            const currentLon = p1[1] + (p2[1] - p1[1]) * t;
+            const currentPos = [currentLat, currentLon];
+
+            carMarker.setLatLng(currentPos);
+        }
+
+        animationId = requestAnimationFrame(step);
+    }
+
+    step();
 }
 
 function resetReplay() {
-  cancelAnimationFrame(frame);
-  marker.setLatLng(src);
-  if (animLine) { m.removeLayer(animLine); animLine = null; }
+    if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+    }
+    carMarker.closePopup();
+    carMarker.setLatLng(startPt);
+    if (activePolyline) {
+        m.removeLayer(activePolyline);
+        activePolyline = null;
+    }
 }
 </script>
 {% endblock %}

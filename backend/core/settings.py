@@ -105,14 +105,11 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework.authentication.SessionAuthentication'],
 }
 
-# Email
-EMAIL_BACKEND      = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST         = 'smtp.gmail.com'
-EMAIL_PORT         = 587
-EMAIL_USE_TLS      = True
-EMAIL_HOST_USER    = os.environ.get('EMAIL_HOST_USER',    'negativezero48@gmail.com')
-EMAIL_HOST_PASSWORD= os.environ.get('EMAIL_HOST_PASSWORD','ytsb nbhs znjs uiby')
-DEFAULT_FROM_EMAIL = f'RouteOptima <{EMAIL_HOST_USER}>'
+# Email (Resend HTTP API)
+EMAIL_BACKEND = 'routing.email_backend.ResendEmailBackend'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'negativezero48@gmail.com')
+DEFAULT_FROM_EMAIL = 'RouteOptima <noreply@sohitgiri.com.np>'
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
 
 # 4. CORS: Allowed frontend origins
 CORS_ALLOWED_ORIGINS = [

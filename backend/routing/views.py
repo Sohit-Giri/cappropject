@@ -13,10 +13,9 @@ import csv, json
 import random
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect
+from django.core.mail import EmailMultiAlternatives
 
-# UPDATED: Added UserOTP to this line
 from .models import RouteLog, SavedRoute, UserPreference, UserOTP
-
 from .serializers import (RouteRequestSerializer, RouteLogSerializer,
                            SavedRouteSerializer)
 from .graph_manager import GraphManager
@@ -27,66 +26,107 @@ def _get_pref(user):
     return pref
 
 
+# ── Beautified HTML Email Helpers ──────────────────────────────────────────────
+
 def _send_welcome(user):
     try:
+        user_name = user.first_name or user.username
+        subject = 'Welcome to RouteOptima! 🗺️'
+        
+        plain_message = (
+            f"Hi {user_name},\n\n"
+            "Welcome to RouteOptima — Kathmandu's smart route optimizer!\n\n"
+            "You can now:\n"
+            "  • Find shortest paths across Kathmandu Valley\n"
+            "  • Search any place by name — tea shops, hospitals, schools\n"
+            "  • Compare routes side by side\n"
+            "  • Save favourite routes and share them with friends\n\n"
+            "Open the app: https://your-app.vercel.app/dashboard/\n\n"
+            "— RouteOptima Team\nIIMS College · Group 36 · 2026"
+        )
+
+        html_message = f"""
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px;">
+          <div style="max-width: 550px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 10px; border: 1px solid #e0e0e0; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h1 style="color: #2563eb; margin: 0; font-size: 24px;">RouteOptima</h1>
+              <p style="color: #6b7280; font-size: 14px; margin-top: 4px;">Kathmandu's Smart Route Optimizer</p>
+            </div>
+            <p style="font-size: 16px; color: #333333;">Hi <strong>{user_name}</strong>,</p>
+            <p style="font-size: 15px; color: #4b5563; line-height: 1.5;">Welcome aboard! We are excited to help you navigate and optimize your journeys across Kathmandu Valley.</p>
+            <div style="background-color: #f8fafc; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <p style="margin: 0 0 8px 0; font-weight: bold; color: #1e293b;">Here is what you can do:</p>
+              <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 14px; line-height: 1.6;">
+                <li>Find shortest paths across Kathmandu Valley</li>
+                <li>Search locations by name (cafes, hospitals, landmarks)</li>
+                <li>Compare routes side by side</li>
+                <li>Save and share your favorite routes</li>
+              </ul>
+            </div>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://your-app.vercel.app/dashboard/" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Go to Dashboard</a>
+            </div>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 25px 0;">
+            <p style="font-size: 12px; color: #9ca3af; text-align: center; margin: 0;">RouteOptima Team · IIMS College · Group 36</p>
+          </div>
+        </body>
+        </html>
+        """
+
         send_mail(
-            subject='Welcome to RouteOptima! 🗺️',
-            message=(
-                f'''Hi {user.first_name or user.username},
-
-Welcome to RouteOptima — Nepal's smart route optimizer!
-
-You can now:
-  • Find shortest paths across Kathmandu Valley + Nuwakot & Dhading
-  • Search any place by name — tea shops, hospitals, schools
-  • Compare two routes side by side
-  • Save favourite routes and share them with friends
-
-Open the app: https://your-app.vercel.app/dashboard/
-
-— RouteOptima Team
-  IIMS College · Group 36 · 2026'''
-            ),
+            subject=subject,
+            message=plain_message,
             from_email=conf.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email] if user.email else [],
+            html_message=html_message,
             fail_silently=True,
         )
     except Exception:
         pass
 
+
 def send_signup_email(email, otp):
-
     subject = "Verify your RouteOptima account"
+    
+    plain_message = f"Hello,\n\nWelcome to RouteOptima.\nYour verification code is: {otp}\n\nThis OTP expires in 5 minutes.\n\nRouteOptima"
 
-    message = f"""
-Hello,
-
-Welcome to RouteOptima.
-
-Your verification code is
-
-{otp}
-
-This OTP expires in 5 minutes.
-
-If you did not request this, simply ignore this email.
-
-RouteOptima
-"""
+    html_message = f"""
+    <!DOCTYPE html>
+    <html>
+    <body style="font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px;">
+      <div style="max-width: 480px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 10px; border: 1px solid #e0e0e0; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center;">
+        <h2 style="color: #2563eb; margin: 0 0 10px 0;">RouteOptima</h2>
+        <p style="color: #4b5563; font-size: 15px; margin-bottom: 25px;">Use the verification code below to complete your registration:</p>
+        <div style="background-color: #eff6ff; border: 1px dashed #2563eb; padding: 15px; border-radius: 8px; display: inline-block; margin-bottom: 20px;">
+          <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1d4ed8;">{otp}</span>
+        </div>
+        <p style="font-size: 13px; color: #6b7280; margin-bottom: 20px;">This code will expire in <strong>5 minutes</strong>.</p>
+        <p style="font-size: 12px; color: #9ca3af;">If you did not request this code, you can safely ignore this email.</p>
+      </div>
+    </body>
+    </html>
+    """
 
     send_mail(
         subject,
-        message,
+        plain_message,
         conf.DEFAULT_FROM_EMAIL,
         [email],
+        html_message=html_message,
         fail_silently=True
     )
+
 
 # ── Public pages ──────────────────────────────────────────────────────────────
 def landing(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
     return render(request, 'routing/landing.html')
+
+
+from django.core.mail import EmailMultiAlternatives
 
 # 1. REQUEST OTP VIEW
 def forgot_password_view(request):
@@ -95,14 +135,38 @@ def forgot_password_view(request):
         try:
             user = User.objects.get(email=email)
             otp_record = UserOTP.generate_reset(user)
+            user_name = user.first_name or user.username
             
-            # Send Email containing the Code
             subject = "Your RouteOptima Password Reset OTP"
-            message = f"Hello {user.first_name or user.username},\n\nYour OTP for resetting your password is: {otp_record.otp_code}\n\nThis code expires in 5 minutes."
+            plain_message = f"Hello {user_name},\n\nYour OTP for resetting your password is: {otp_record.otp_code}\n\nThis code expires in 5 minutes."
             
-            send_mail(subject, message, conf.DEFAULT_FROM_EMAIL or 'noreply@routeoptima.com', [user.email], fail_silently=False)
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <body style="font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px;">
+              <div style="max-width: 480px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 10px; border: 1px solid #e0e0e0; text-align: center;">
+                <h2 style="color: #2563eb; margin-top: 0;">Password Reset Request</h2>
+                <p style="color: #4b5563; font-size: 15px;">Hi <strong>{user_name}</strong>, enter the code below to reset your RouteOptima account password:</p>
+                <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; display: inline-block; margin: 15px 0;">
+                  <span style="font-size: 30px; font-weight: bold; letter-spacing: 5px; color: #111827;">{otp_record.otp_code}</span>
+                </div>
+                <p style="font-size: 13px; color: #6b7280;">This code is valid for 5 minutes.</p>
+              </div>
+            </body>
+            </html>
+            """
             
-            # Store target email temporarily in session to identify user during verification step
+            # Send using EmailMultiAlternatives to guarantee HTML MIME rendering
+            from_email = getattr(conf, 'DEFAULT_FROM_EMAIL', 'noreply@sohitgiri.com.np')
+            msg = EmailMultiAlternatives(
+                subject=subject,
+                body=plain_message,
+                from_email=from_email,
+                to=[user.email]
+            )
+            msg.attach_alternative(html_content, "text/html")
+            msg.send(fail_silently=False)
+            
             request.session['reset_email'] = email
             messages.success(request, 'A 6-digit OTP has been sent to your email address!')
             return redirect('verify_otp')
@@ -122,19 +186,34 @@ def verify_otp_view(request):
     if request.method == 'POST':
         action = request.POST.get('action')
         
-        # Handle Resend Request explicitly
         if action == 'resend':
             try:
                 user = User.objects.get(email=email)
                 otp_record = UserOTP.generate_for_user(user)
                 subject = "Your RouteOptima Password Reset OTP"
-                message = f"Your new RouteOptima OTP is: {otp_record.otp_code}"
-# FIXED: Swapped out the hardcoded string for your system's global default settings configurations
+                plain_message = f"Your new RouteOptima OTP is: {otp_record.otp_code}"
+                
+                html_message = f"""
+                <!DOCTYPE html>
+                <html>
+                <body style="font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px;">
+                  <div style="max-width: 480px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 10px; border: 1px solid #e0e0e0; text-align: center;">
+                    <h2 style="color: #2563eb; margin-top: 0;">New OTP Request</h2>
+                    <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; display: inline-block; margin: 15px 0;">
+                      <span style="font-size: 30px; font-weight: bold; letter-spacing: 5px; color: #111827;">{otp_record.otp_code}</span>
+                    </div>
+                    <p style="font-size: 13px; color: #6b7280;">This fresh OTP expires in 5 minutes.</p>
+                  </div>
+                </body>
+                </html>
+                """
+
                 send_mail(
                     subject, 
-                    message, 
+                    plain_message, 
                     getattr(conf, 'DEFAULT_FROM_EMAIL', 'RouteOptima <noreply@routeoptima.com>'), 
                     [email],
+                    html_message=html_message,
                     fail_silently=False
                 )
                 messages.success(request, 'A fresh OTP code has been dispatched!')
@@ -142,7 +221,6 @@ def verify_otp_view(request):
                 messages.error(request, 'Error sending new OTP. Try again.')
             return redirect('verify_otp')
 
-        # Handle Standard Verification Check
         otp_input = request.POST.get('otp', '').strip()
         try:
             user = User.objects.get(email=email)
@@ -184,7 +262,6 @@ def reset_password_view(request):
             user.set_password(p1)
             user.save()
             
-            # Clear reset session completely 
             request.session.flush()
             messages.success(request, 'Password changed successfully! Log in now. 🎉')
             return redirect('login')
@@ -199,17 +276,13 @@ def login_view(request):
         identifier = request.POST.get('email', '').strip() or request.POST.get('username', '').strip()
         password = request.POST.get('password', '')
         
-        # Try to find if a user exists with this email address
         try:
             if '@' in identifier:
                 user_obj = User.objects.get(email=identifier)
-                # Swap the email string for their actual database username
                 identifier = user_obj.username
         except User.DoesNotExist:
-            # If email isn't found, keep going; authenticate() will catch the error safely below
             pass
 
-        # Authenticate using the structural database username
         user = authenticate(request, username=identifier, password=password)
         
         if user is not None:
@@ -251,64 +324,31 @@ def register_view(request):
 def send_signup_otp(request):
 
     username = request.POST.get("username","").strip()
-
     email = request.POST.get("email","").strip().lower()
 
     if not username:
-
-        return JsonResponse({
-            "success":False,
-            "message":"Username is required."
-        })
+        return JsonResponse({"success":False, "message":"Username is required."})
 
     if not email:
-
-        return JsonResponse({
-            "success":False,
-            "message":"Email is required."
-        })
+        return JsonResponse({"success":False, "message":"Email is required."})
 
     if User.objects.filter(username=username).exists():
-
-        return JsonResponse({
-            "success":False,
-            "message":"Username already exists."
-        })
+        return JsonResponse({"success":False, "message":"Username already exists."})
 
     if User.objects.filter(email=email).exists():
-
-        return JsonResponse({
-            "success":False,
-            "message":"Email already registered."
-        })
+        return JsonResponse({"success":False, "message":"Email already registered."})
 
     otp_record = UserOTP.generate_signup(email)
 
     try:
-
-        send_signup_email(
-            email,
-            otp_record.otp_code
-        )
-
-    except Exception as e:
-
-        return JsonResponse({
-            "success":False,
-            "message":"Unable to send email."
-        })
+        send_signup_email(email, otp_record.otp_code)
+    except Exception:
+        return JsonResponse({"success":False, "message":"Unable to send email."})
 
     request.session["signup_username"] = username
-
     request.session["signup_email"] = email
 
-    return JsonResponse({
-
-        "success":True,
-
-        "message":"OTP sent successfully."
-
-    })
+    return JsonResponse({"success":True, "message":"OTP sent successfully."})
 
 @require_POST
 def verify_signup_otp(request):
@@ -316,146 +356,78 @@ def verify_signup_otp(request):
     email = request.session.get("signup_email")
 
     if not email:
-        return JsonResponse({
-            "success": False,
-            "message": "Registration session expired."
-        })
+        return JsonResponse({"success": False, "message": "Registration session expired."})
 
     otp = request.POST.get("otp", "").strip()
 
     if not otp:
-        return JsonResponse({
-            "success": False,
-            "message": "Enter OTP."
-        })
+        return JsonResponse({"success": False, "message": "Enter OTP."})
 
     try:
-
         otp_record = UserOTP.objects.filter(
             email=email,
             purpose="signup",
             otp_code=otp
         ).latest("created_at")
-
     except UserOTP.DoesNotExist:
-
-        return JsonResponse({
-            "success": False,
-            "message": "Invalid OTP."
-        })
+        return JsonResponse({"success": False, "message": "Invalid OTP."})
 
     if not otp_record.is_valid():
-
-        return JsonResponse({
-            "success": False,
-            "message": "OTP expired."
-        })
+        return JsonResponse({"success": False, "message": "OTP expired."})
 
     otp_record.is_verified = True
     otp_record.save()
 
     request.session["signup_verified"] = True
 
-    return JsonResponse({
-
-        "success": True,
-
-        "message": "Email verified."
-
-    })
+    return JsonResponse({"success": True, "message": "Email verified."})
 
 @require_POST
 def create_signup_account(request):
 
     if not request.session.get("signup_verified"):
-
-        return JsonResponse({
-            "success": False,
-            "message": "Verify your email first."
-        })
+        return JsonResponse({"success": False, "message": "Verify your email first."})
 
     username = request.session.get("signup_username")
     email = request.session.get("signup_email")
-
-    first_name = request.POST.get(
-        "first_name",
-        ""
-    ).strip()
-
-    password1 = request.POST.get(
-        "password1",
-        ""
-    )
-
-    password2 = request.POST.get(
-        "password2",
-        ""
-    )
+    first_name = request.POST.get("first_name", "").strip()
+    password1 = request.POST.get("password1", "")
+    password2 = request.POST.get("password2", "")
 
     if first_name == "":
-        return JsonResponse({
-            "success": False,
-            "message": "Enter your name."
-        })
+        return JsonResponse({"success": False, "message": "Enter your name."})
 
     if password1 != password2:
-        return JsonResponse({
-            "success": False,
-            "message": "Passwords do not match."
-        })
+        return JsonResponse({"success": False, "message": "Passwords do not match."})
 
     if len(password1) < 6:
-        return JsonResponse({
-            "success": False,
-            "message": "Password must be at least 6 characters."
-        })
+        return JsonResponse({"success": False, "message": "Password must be at least 6 characters."})
 
     if User.objects.filter(username=username).exists():
-        return JsonResponse({
-            "success": False,
-            "message": "Username already exists."
-        })
+        return JsonResponse({"success": False, "message": "Username already exists."})
 
     if User.objects.filter(email=email).exists():
-        return JsonResponse({
-            "success": False,
-            "message": "Email already exists."
-        })
+        return JsonResponse({"success": False, "message": "Email already exists."})
 
     user = User.objects.create_user(
-
         username=username,
-
         email=email,
-
         first_name=first_name,
-
         password=password1
-
     )
 
     UserPreference.objects.create(user=user)
-
     login(request, user)
-
     _send_welcome(user)
 
-    UserOTP.objects.filter(
-        email=email,
-        purpose="signup"
-    ).delete()
+    UserOTP.objects.filter(email=email, purpose="signup").delete()
 
     request.session.pop("signup_username", None)
     request.session.pop("signup_email", None)
     request.session.pop("signup_verified", None)
 
-    return JsonResponse({
+    return JsonResponse({"success": True, "redirect": "/dashboard/"})
 
-        "success": True,
-
-        "redirect": "/dashboard/"
-
-    })
 def logout_view(request):
     logout(request)
     return redirect('landing')
@@ -475,18 +447,12 @@ def share_view(request, token):
 # ── Protected pages ───────────────────────────────────────────────────────────
 @login_required
 def warmup_graph(request):
-
     gm = GraphManager.get_instance()
-
     if not gm.is_loaded():
-
         from django.conf import settings
-
         gm.load_districts(settings.GRAPH_DISTRICTS)
 
-    return JsonResponse({
-        "status":"loading"
-    })
+    return JsonResponse({"status":"loading"})
 
 @login_required
 def dashboard(request):
@@ -652,7 +618,6 @@ class RouteAPIView(APIView):
             
         gm = GraphManager.get_instance()
         
-        # Serverless Container Lazy Load Check
         if not gm.is_loaded():
             try:
                 from django.conf import settings
@@ -681,16 +646,13 @@ class RouteAPIView(APIView):
                              
         engine = RouteEngine()
         try:
-            # 1. Generate multi-modal response payload
             all_modes_data = engine.compute_all_routes(sn, dn)
         except (ValueError, RuntimeError) as e:
             return Response({'status': 'error', 'message': str(e)}, status=400)
             
-        # Verify that at least one drivable path exists
         if all_modes_data['car'] is None and all_modes_data['walk'] is None:
             return Response({'status': 'error', 'message': 'No traversable path found.'}, status=404)
                              
-        # 2. Persist a primary entry in database history records using Car stats as standard
         primary_mode = all_modes_data['car'] or all_modes_data['walk']
         path_json = json.dumps(primary_mode['path_coords'])
         
@@ -706,12 +668,11 @@ class RouteAPIView(APIView):
             path_coords=path_json
         )
         
-        # 3. Append relational details and respond
         return Response({
             'status': 'success',
             'route_id': log.id,
             'share_token': str(log.share_token),
-            'routes': all_modes_data  # Contains data for 'walk', 'bike', and 'car'
+            'routes': all_modes_data
         })
 
 
@@ -797,9 +758,8 @@ class HeatmapDataAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        from django.db.models import Count
         logs = RouteLog.objects.all()[:500]
-        pts  = [[r.src_lat, r.src_lon, 0.5] for r in logs] +                [[r.dst_lat, r.dst_lon, 0.5] for r in logs]
+        pts  = [[r.src_lat, r.src_lon, 0.5] for r in logs] + [[r.dst_lat, r.dst_lon, 0.5] for r in logs]
         return Response({'points': pts})
 
 
