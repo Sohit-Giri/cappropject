@@ -1,0 +1,423 @@
+{% extends 'routing/base.html' %}
+{% block title %}Documentation — RouteOptima{% endblock %}
+{% block public %}
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg0: #fcfaf2;
+    --bg1: #ffffff;
+    --bg2: #f4f1e6;
+    --bg3: #e9e4d5;
+    --bg4: #dbd4c0;
+    --accent: #2563eb;
+    --accent2: #1d4ed8;
+    --accent3: #1e40af;
+    --text1: #000000;
+    --text2: #1e293b;
+    --text3: #475569;
+    --green: #16a34a;
+    --red: #dc2626;
+    --yellow: #d97706;
+    --purple: #7c3aed;
+    --border: rgba(37, 99, 235, 0.15);
+    --card-glow: rgba(37, 99, 235, 0.04);
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg0);
+    color: var(--text1);
+  }
+
+  .landing-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.5rem;
+    background-color: var(--bg1);
+    border-bottom: 1px solid var(--border);
+    width: 100%;
+    box-sizing: border-box;
+    flex-wrap: wrap; 
+    gap: 1rem;    
+    position: sticky; 
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    backdrop-filter: blur(12px);
+  }
+
+  .landing-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0; 
+    text-decoration: none;
+  }
+
+  .landing-logo .icon {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #ffffff;
+  }
+
+  .landing-logo .name {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text1);
+    letter-spacing: -.3px;
+  }
+
+  .landing-logo .sub {
+    font-size: 10px;
+    color: var(--text3);
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-shrink: 1;
+  }
+
+  .nav-links a {
+    font-size: 14px;
+    color: var(--text2);
+    text-decoration: none;
+    white-space: nowrap; 
+    transition: color .2s;
+  }
+
+  .nav-links a:hover {
+    color: var(--text1);
+  }
+
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+  }
+
+  .nav-actions-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    padding: .7rem 1.3rem;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all .2s;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+  }
+
+  .btn-primary:hover {
+    background: var(--accent2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px var(--card-glow);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+
+  .btn-ghost:hover {
+    background: var(--bg2);
+    color: var(--text1);
+  }
+
+  .btn-sm {
+    padding: .38rem .85rem;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+
+  .btn-lg {
+    padding: .9rem 2rem;
+    font-size: 16px;
+    border-radius: 10px;
+  }
+
+  .main-content-wrapper {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .page-header {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 1rem 1.5rem;
+    text-align: left; 
+    box-sizing: border-box;
+  }
+
+  .page-header h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 900;
+    letter-spacing: -1px;
+    margin-bottom: 0.5rem;
+  }
+
+  .page-header .desc {
+    font-size: 1.1rem;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+
+  .page-body {
+    padding: 1rem 1.5rem 3rem 1.5rem;
+    box-sizing: border-box;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px var(--card-glow);
+  }
+
+  .card-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    color: var(--text1);
+  }
+
+  .code-block {
+    background: var(--bg0);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: .75rem 1rem;
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--text2);
+    overflow-x: auto;
+    margin-top: .65rem;
+    white-space: pre-wrap; 
+    word-break: break-all;
+  }
+
+  .api-endpoint {
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 20px var(--card-glow);
+  }
+
+  .endpoint-method {
+    font-family: monospace;
+    font-weight: 800;
+    font-size: 12px;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    margin-right: 0.5rem;
+  }
+
+  .method-post {
+    background: rgba(124, 58, 237, 0.15);
+    color: var(--purple);
+  }
+
+  .method-get {
+    background: rgba(22, 163, 74, 0.15);
+    color: var(--green);
+  }
+
+  .endpoint-url {
+    font-family: monospace;
+    font-weight: 700;
+    color: var(--text1);
+  }
+
+  @media (max-width: 950px) and (min-width: 581px) {
+    .landing-nav {
+      justify-content: space-between;
+      padding: 0.5rem 1rem;
+      gap: 0.5rem;
+    }
+    .nav-links {
+      width: auto;
+      order: unset;
+      gap: 1rem;
+    }
+    .nav-actions {
+      width: auto;
+      order: unset;
+      gap: 0.75rem;
+    }
+    .page-header {
+      padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+    }
+  }
+
+  @media (max-width: 1100px) and (min-width: 951px) {
+    .nav-links {
+      gap: 1.25rem; 
+    }
+  }
+
+  @media (max-width: 580px) {
+    .landing-nav {
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.65rem 0.5rem;
+    }
+
+    .nav-links {
+      gap: 0.85rem;
+    }
+
+    .nav-links a {
+      font-size: 13px;
+    }
+
+    .nav-actions {
+      flex-direction: row; 
+      justify-content: center;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .nav-actions-buttons .btn {
+      padding: 0.25rem 0.5rem;
+      font-size: 12px;
+    }
+
+    .page-header {
+      padding: 1.5rem 1rem 0.5rem 1rem;
+      text-align: center; 
+    }
+
+    .page-header h1 {
+      font-size: 1.6rem;
+    }
+
+    .page-body {
+      padding: 0.75rem !important;
+    }
+
+    .api-endpoint {
+      padding: 0.85rem;
+    }
+    
+    .endpoint-url {
+      font-size: 12px;
+      word-break: break-all;
+    }
+  }
+</style>
+
+<nav class="landing-nav">
+  <a href="{% url 'landing' %}" class="landing-logo">
+    <div class="icon">&#9672;</div>
+    <div><div class="name">RouteOptima</div></div>
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'landing' %}">Home</a>
+    <a href="{% url 'about' %}">About</a>
+    <a href="{% url 'docs' %}">Docs</a>
+    <a href="{% url 'team' %}">Team</a>
+    <a href="{% url 'help' %}">Help</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-actions-buttons">
+      {% if user.is_authenticated %}
+      <a href="{% url 'dashboard' %}" class="btn btn-primary btn-sm">Dashboard</a>
+      {% else %}
+      <a href="{% url 'login' %}"    class="btn btn-ghost btn-sm">Log In</a>
+      <a href="{% url 'register' %}" class="btn btn-primary btn-sm">Sign Up</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<div class="main-content-wrapper">
+  {% block content %}
+  <div class="page-header">
+    <h1>API Documentation</h1>
+    <div class="desc">REST API reference for the RouteOptima backend</div>
+  </div>
+
+  <div class="page-body">
+    <div class="content-wrap">
+      
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-title">Authentication</div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.6">All protected endpoints require session authentication. Log in via the web UI at <code style="color:var(--accent2)">/login/</code>. The session cookie is automatically included. Public endpoints (<code style="color:var(--accent2)">/api/health/</code>, <code style="color:var(--accent2)">/api/graph/</code>) require no login.</p>
+      </div>
+
+      <div class="api-endpoint">
+        <div><span class="endpoint-method method-post">POST</span><span class="endpoint-url">/api/route/</span></div>
+        <p style="font-size:13px;color:var(--text2);margin:.4rem 0">Compute the shortest route using Dijkstra's algorithm.</p>
+        <div class="code-block">Request: {"src_lat":27.7103,"src_lon":85.3222,"dst_lat":27.7350,"dst_lon":85.3400,"src_name":"Pashupatinath","dst_name":"Boudha","mode":"car"}
+Response: {"status":"success","data":{"path_coords":[...],"total_distance_km":4.251,"eta_minutes":6.4,"node_count":47,"route_id":12,"share_token":"uuid..."}}</div>
+      </div>
+
+      <div class="api-endpoint">
+        <div><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/api/health/</span></div>
+        <p style="font-size:13px;color:var(--text2);margin:.4rem 0">Check backend and graph status.</p>
+        <div class="code-block">{"status":"ready","graph":{"loaded":true,"nodes":8490,"edges":21519,"loaded_count":1,"total":1}}</div>
+      </div>
+
+      <div class="api-endpoint">
+        <div><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/api/analytics/</span></div>
+        <p style="font-size:13px;color:var(--text2);margin:.4rem 0">Get personal route statistics and daily counts.</p>
+      </div>
+
+      <div class="api-endpoint">
+        <div><span class="endpoint-method method-post">POST</span><span class="endpoint-url">/api/save-route/</span></div>
+        <p style="font-size:13px;color:var(--text2);margin:.4rem 0">Save a route to favourites.</p>
+        <div class="code-block">{"route_id": 12, "label": "Office commute"}</div>
+      </div>
+
+      <div class="api-endpoint">
+        <div><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/api/heatmap-data/</span></div>
+        <p style="font-size:13px;color:var(--text2);margin:.4rem 0">Returns lat/lon intensity points for heatmap overlay.</p>
+      </div>
+
+      <div class="api-endpoint">
+        <div><span class="endpoint-method method-get">GET</span><span class="endpoint-url">/api/leaderboard-data/</span></div>
+        <p style="font-size:13px;color:var(--text2);margin:.4rem 0">Top 10 users by total distance computed.</p>
+      </div>
+
+    </div>
+  </div>
+  {% endblock %}
+</div>
+
+<script>
+  // Enforcing classic parchment default style environment fallback
+  document.documentElement.setAttribute('data-theme', 'parchment');
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'routing/base.html' %}
+{% block title %}Benchmark — RouteOptima{% endblock %}
+{% block content %}
+<div class="page-header"><h1>⚡ Benchmark</h1><div class="desc">Test API response time for route computation.</div></div>
+<div class="page-body">
+  <div style="max-width:600px">
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">Run Benchmark</div>
+      <div class="form-group"><label>Number of requests</label>
+        <select id="nReq"><option>5</option><option selected>10</option><option>20</option></select></div>
+      <button class="btn btn-primary" onclick="runBench()">▶ Start Benchmark</button>
+      <div id="bProgress" style="display:none;margin-top:.75rem">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:.3rem" id="bStatus">Running…</div>
+        <div class="progress-bar"><div class="progress-fill" id="bFill" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div id="bResults" style="display:none" class="bench-grid">
+      <div class="bench-card"><div class="bench-val" id="bAvg">—</div><div class="bench-lbl">Avg ms</div></div>
+      <div class="bench-card"><div class="bench-val" id="bMin">—</div><div class="bench-lbl">Min ms</div></div>
+      <div class="bench-card"><div class="bench-val" id="bMax">—</div><div class="bench-lbl">Max ms</div></div>
+      <div class="bench-card"><div class="bench-val" id="bOk">—</div><div class="bench-lbl">Success %</div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const testRoutes=[
+  {src_lat:27.7103,src_lon:85.3222,dst_lat:27.7350,dst_lon:85.3400,mode:'car'},
+  {src_lat:27.6900,src_lon:85.3420,dst_lat:27.7200,dst_lon:85.3100,mode:'car'},
+  {src_lat:27.7200,src_lon:85.3500,dst_lat:27.6750,dst_lon:85.3280,mode:'car'},
+];
+async function runBench(){
+  const n=parseInt(document.getElementById('nReq').value);
+  document.getElementById('bProgress').style.display='block';
+  document.getElementById('bResults').style.display='none';
+  const times=[]; let ok=0;
+  for(let i=0;i<n;i++){
+    const route=testRoutes[i%testRoutes.length];
+    const t0=performance.now();
+    try{
+      const r=await fetch('/api/route/',{method:'POST',credentials:'same-origin',
+        headers:{'Content-Type':'application/json','X-CSRFToken':document.cookie.split('; ').find(r=>r.startsWith('csrftoken='))?.split('=')[1]||''},
+        body:JSON.stringify(route)});
+      const j=await r.json();
+      if(j.status==='success')ok++;
+    }catch{}
+    times.push(Math.round(performance.now()-t0));
+    document.getElementById('bFill').style.width=((i+1)/n*100)+'%';
+    document.getElementById('bStatus').textContent=`${i+1}/${n} requests done`;
+  }
+  const avg=Math.round(times.reduce((a,b)=>a+b,0)/times.length);
+  document.getElementById('bAvg').textContent=avg;
+  document.getElementById('bMin').textContent=Math.min(...times);
+  document.getElementById('bMax').textContent=Math.max(...times);
+  document.getElementById('bOk').textContent=Math.round(ok/n*100)+'%';
+  document.getElementById('bResults').style.display='grid';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,387 @@
+{% extends 'routing/base.html' %}
+{% block title %}About — RouteOptima{% endblock %}
+{% block public %}
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg0: #fcfaf2;
+    --bg1: #ffffff;
+    --bg2: #f4f1e6;
+    --bg3: #e9e4d5;
+    --bg4: #dbd4c0;
+    --accent: #2563eb;
+    --accent2: #1d4ed8;
+    --accent3: #1e40af;
+    --text1: #000000;
+    --text2: #1e293b;
+    --text3: #475569;
+    --green: #16a34a;
+    --red: #dc2626;
+    --yellow: #d97706;
+    --purple: #7c3aed;
+    --border: rgba(37, 99, 235, 0.15);
+    --card-glow: rgba(37, 99, 235, 0.04);
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg0);
+    color: var(--text1);
+  }
+
+  .landing-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.5rem;
+    background-color: var(--bg1);
+    border-bottom: 1px solid var(--border);
+    width: 100%;
+    box-sizing: border-box;
+    flex-wrap: wrap; 
+    gap: 1rem;    
+    position: sticky; 
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    backdrop-filter: blur(12px);
+  }
+
+  .landing-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0; 
+    text-decoration: none;
+  }
+
+  .landing-logo .icon {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #ffffff;
+  }
+
+  .landing-logo .name {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text1);
+    letter-spacing: -.3px;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-shrink: 1;
+  }
+
+  .nav-links a {
+    font-size: 14px;
+    color: var(--text2);
+    text-decoration: none;
+    white-space: nowrap; 
+    transition: color .2s;
+  }
+
+  .nav-links a:hover {
+    color: var(--text1);
+  }
+
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+  }
+
+  .nav-actions-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    padding: .7rem 1.3rem;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all .2s;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+  }
+
+  .btn-primary:hover {
+    background: var(--accent2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px var(--card-glow);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+
+  .btn-ghost:hover {
+    background: var(--bg2);
+    color: var(--text1);
+  }
+
+  .btn-sm {
+    padding: .38rem .85rem;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+
+  .main-content-wrapper {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .page-header {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 1rem 1.5rem;
+    text-align: left; 
+    box-sizing: border-box;
+  }
+
+  .page-header h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 900;
+    letter-spacing: -1px;
+    margin-bottom: 0.5rem;
+  }
+
+  .page-header .desc {
+    font-size: 1.1rem;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+
+  .page-body {
+    padding: 1rem 1.5rem 3rem 1.5rem;
+    box-sizing: border-box;
+  }
+
+  .about-grid-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 1.5rem;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  .tech-stack-subgrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .65rem;
+  }
+
+  .card {
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px var(--card-glow);
+  }
+
+  .card-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    color: var(--text1);
+  }
+
+  @media (max-width: 950px) and (min-width: 581px) {
+    .landing-nav {
+      justify-content: space-between;
+      padding: 0.5rem 1rem;
+      gap: 0.5rem;
+    }
+    .nav-links {
+      width: auto;
+      order: unset;
+      gap: 1rem;
+    }
+    .nav-actions {
+      width: auto;
+      order: unset;
+      gap: 0.75rem;
+    }
+    .page-header {
+      padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+    }
+  }
+
+  @media (max-width: 1100px) and (min-width: 951px) {
+    .nav-links {
+      gap: 1.25rem; 
+    }
+  }
+
+  @media (max-width: 580px) {
+    .landing-nav {
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.65rem 0.5rem;
+    }
+
+    .nav-links {
+      gap: 0.85rem;
+    }
+
+    .nav-links a {
+      font-size: 13px;
+    }
+
+    .nav-actions {
+      flex-direction: row; 
+      justify-content: center;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .nav-actions-buttons .btn {
+      padding: 0.25rem 0.5rem;
+      font-size: 12px;
+    }
+
+    .page-header {
+      padding: 1.5rem 1rem 0.5rem 1rem;
+      text-align: center; 
+    }
+
+    .page-header h1 {
+      font-size: 1.6rem;
+    }
+
+    .page-body {
+      padding: 0.75rem !important;
+    }
+
+    .about-grid-layout {
+      grid-template-columns: 1fr !important;
+      gap: 1rem;
+    }
+
+    .tech-stack-subgrid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+</style>
+
+<nav class="landing-nav">
+  <a href="{% url 'landing' %}" class="landing-logo">
+    <div class="icon">&#9672;</div>
+    <div><div class="name">RouteOptima</div></div>
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'landing' %}">Home</a>
+    <a href="{% url 'about' %}">About</a>
+    <a href="{% url 'docs' %}">Docs</a>
+    <a href="{% url 'team' %}">Team</a>
+    <a href="{% url 'help' %}">Help</a>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-actions-buttons">
+      {% if user.is_authenticated %}
+      <a href="{% url 'dashboard' %}" class="btn btn-primary btn-sm">Go to Dashboard</a>
+      {% else %}
+      <a href="{% url 'login' %}"    class="btn btn-ghost btn-sm">Log In</a>
+      <a href="{% url 'register' %}" class="btn btn-primary btn-sm">Sign Up</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<div class="main-content-wrapper">
+  {% block content %}
+  <div class="page-header">
+    <h1>About RouteOptima</h1>
+    <div class="desc">Nepal's shortest-path route optimizer — built with Dijkstra's algorithm and OpenStreetMap.</div>
+  </div>
+
+  <div class="page-body">
+    <div class="about-grid-layout">
+      
+      <div>
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-title">What is RouteOptima?</div>
+          <p style="color:var(--text2);line-height:1.7;margin-bottom:.75rem">RouteOptima is a Final Year Project (FYP) built by Group 36 at IIMS College. It provides an optimized web-based interface to compute the shortest drivable route between any two geographic coordinates targeted across the <strong style="color:var(--text1)">Kathmandu</strong> urban ecosystem.</p>
+          <p style="color:var(--text2);line-height:1.7;margin-bottom:.75rem">Real road network data is pulled directly from <strong style="color:var(--text1)">OpenStreetMap</strong> using the spatial computing framework <code style="color:var(--accent2);font-family:monospace">osmnx</code> and structured locally inside an indexed GraphML payload configuration. The localized pathfinder graph loads entirely into memory instances once, serving query lookups in micro-milliseconds.</p>
+          <p style="color:var(--text2);line-height:1.7">The structural pathfinding algorithm handling calculating requests is <strong style="color:var(--accent2)">Dijkstra's Shortest Path First (SPF)</strong> logic mapped through structural NetworkX nodes. Users can trace destinations across minor intersections or points of interest seamlessly without typing coordinates directly.</p>
+        </div>
+
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-title">Technology Stack</div>
+          <div class="tech-stack-subgrid">
+            <div style="padding:.65rem;background:var(--bg2);border-radius:8px;border:1px solid var(--border)"><div style="font-weight:700;margin-bottom:.2rem">Backend</div><div style="font-size:12px;color:var(--text2)">Python 3.11 · Django 4.x · Django REST Framework</div></div>
+            <div style="padding:.65rem;background:var(--bg2);border-radius:8px;border:1px solid var(--border)"><div style="font-weight:700;margin-bottom:.2rem">Algorithm</div><div style="font-size:12px;color:var(--text2)">Dijkstra SPF · NetworkX · OSMnx</div></div>
+            <div style="padding:.65rem;background:var(--bg2);border-radius:8px;border:1px solid var(--border)"><div style="font-weight:700;margin-bottom:.2rem">Database</div><div style="font-size:12px;color:var(--text2)">PostgreSQL (Supabase) — route logs, users, favourites</div></div>
+            <div style="padding:.65rem;background:var(--bg2);border-radius:8px;border:1px solid var(--border)"><div style="font-weight:700;margin-bottom:.2rem">Frontend</div><div style="font-size:12px;color:var(--text2)">HTML5 · CSS3 · Leaflet.js · Chart.js · Nominatim</div></div>
+            <div style="padding:.65rem;background:var(--bg2);border-radius:8px;border:1px solid var(--border)"><div style="font-weight:700;margin-bottom:.2rem">Map Data</div><div style="font-size:12px;color:var(--text2)">OpenStreetMap (free, open-source)</div></div>
+            <div style="padding:.65rem;background:var(--bg2);border-radius:8px;border:1px solid var(--border)"><div style="font-weight:700;margin-bottom:.2rem">Deployment</div><div style="font-size:12px;color:var(--text2)">Vercel (web) · Supabase (PostgreSQL) - Railway (Backend)</div></div>
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-title">Project Details</div>
+          <div style="display:flex;flex-direction:column;gap:.5rem;font-size:13px">
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Group</span><span>Group 36</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Institute</span><span>IIMS College</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Partner</span><span>Taylor's University</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Year</span><span>2026</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Supervisor</span><span>Nabeen Kumar Aryal</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Algorithm</span><span style="color:var(--accent2)">Dijkstra SPF</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Districts</span><span>1 (Kathmandu)</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Quick Links</div>
+          <div style="display:flex;flex-direction:column;gap:.5rem">
+            <a href="{% url 'docs' %}"  class="btn btn-ghost btn-sm" style="text-align:left">📚 API Documentation</a>
+            <a href="{% url 'team' %}"  class="btn btn-ghost btn-sm" style="text-align:left">👥 Meet the Team</a>
+            <a href="{% url 'help' %}"  class="btn btn-ghost btn-sm" style="text-align:left">❓ Help & FAQ</a>
+            {% if user.is_authenticated %}
+            <a href="{% url 'map' %}"    class="btn btn-primary btn-sm"   style="text-align:left">🗺 Open Route Map</a>
+            {% else %}
+            <a href="{% url 'register' %}" class="btn btn-primary btn-sm" style="text-align:left">🚀 Get Started Free</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  {% endblock %}
+</div>
+
+<script>
+  // Dynamic validation backup enforcing classic parchment defaults
+  document.documentElement.setAttribute('data-theme', 'parchment');
+</script>
+{% endblock %}

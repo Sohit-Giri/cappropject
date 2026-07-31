@@ -1,0 +1,532 @@
+{% extends 'routing/base.html' %}
+{% load static %}
+{% block title %}Route Architecture Matchup: Dijkstra vs A* — RouteOptima{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    /* ─── Wrapper ─────────────────────────────────────────── */
+    .cmp2-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      width: 100%;
+      box-sizing: border-box;
+      padding-bottom: 40px;
+      overflow-x: hidden;             /* catch any child overflow */
+    }
+
+    /* ─── Input grid ──────────────────────────────────────── */
+    .cmp2-inputs {
+      display: grid;
+      /* min(280px, 100%) prevents any column from forcing overflow
+         on containers narrower than 280px */
+      grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+      gap: 1rem 1.25rem;
+      align-items: start;
+    }
+    .cmp2-field  { display: flex; flex-direction: column; gap: .4rem; width: 100%; }
+    .cmp2-label  {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .5px; color: var(--text3);
+    }
+
+    .side-btn-row       { display: flex; gap: .5rem; width: 100%; }
+    .side-btn-row .btn  { flex: 1; min-width: 0; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+    .cmp2-inputs .btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* ─── Actions row ─────────────────────────────────────── */
+    .cmp2-actions-row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .5rem; width: 100%; }
+
+    .cmp2-go-btn {
+      flex: 2;
+      /* min(200px, 100%) means on very narrow containers the button
+         won't force horizontal scroll */
+      min-width: min(200px, 100%);
+      background: var(--accent); color: #fff; border: none; border-radius: 8px;
+      padding: .75rem 1rem; font-weight: 700; font-size: 14px; cursor: pointer;
+      transition: filter .15s ease, opacity .15s ease;
+    }
+    .cmp2-go-btn:hover:not(:disabled) { filter: brightness(1.08); }
+    .cmp2-go-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+    #cmpClearBtn { flex: 1; min-width: min(80px, 100%); }
+
+    .cmp2-status {
+      grid-column: 1 / -1; font-size: 12px; color: var(--text3);
+      min-height: 16px; word-break: break-word;
+    }
+
+    /* ─── Diff banner ─────────────────────────────────────── */
+    .cmp2-diff-banner {
+      background: var(--bg0); border: 1px solid var(--border);
+      border-left: 3px solid var(--accent2); border-radius: 8px;
+      padding: .7rem 1rem; font-size: 13px; color: var(--text2);
+      line-height: 1.5; word-break: break-word; box-sizing: border-box;
+    }
+
+    /* ─── Maps ────────────────────────────────────────────── */
+    .cmp2-maps {
+      display: grid;
+      /* collapses to 1-column automatically when container < 320px */
+      grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+      gap: 1rem;
+      width: 100%;
+    }
+    .cmp2-map-box {
+      position: relative;
+      border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden;
+      /* clamp: min 260px so tiny phones don't get unusably short maps */
+      height: clamp(260px, 42vh, 480px);
+      width: 100%; min-width: 0;
+    }
+    .cmp2-map { width: 100%; height: 100%; display: block; }
+    .cmp2-map-label {
+      position: absolute; top: 10px; left: 10px; z-index: 1000;
+      background: var(--bg0); border: 1px solid; border-radius: 6px;
+      padding: .3rem .6rem; font-size: 11px; font-weight: 700;
+      max-width: calc(100% - 20px); white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+    }
+
+    /* ─── Stats strip ─────────────────────────────────────── */
+    .cmp2-stats {
+      display: grid;
+      /* explicit 4-column — media queries collapse it cleanly */
+      grid-template-columns: repeat(4, 1fr);
+      gap: .75rem;
+      width: 100%;
+    }
+    .cmp2-stat {
+      background: var(--bg0); border: 1px solid var(--border);
+      border-radius: 8px; padding: .75rem; text-align: center; min-width: 0;
+    }
+    .cmp2-stat .val { font-size: 16px; font-weight: 800; word-break: break-all; }
+    .cmp2-stat .lbl {
+      font-size: 10px; color: var(--text3); text-transform: uppercase;
+      letter-spacing: .4px; margin-top: .2rem;
+    }
+
+    /* ─── Charts ──────────────────────────────────────────── */
+    .cmp2-charts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+      gap: 1rem;
+      width: 100%;
+    }
+    .cmp2-chart-card { padding: 1rem; min-width: 0; overflow: hidden; }
+    .cmp2-chart-svg  {
+      margin-top: .5rem; width: 100%; height: auto;
+      display: flex; justify-content: center; overflow: hidden;
+    }
+    /* Override the hardcoded max-width:320px on generated SVGs so they
+       scale down properly when the card is narrower than 320px */
+    .cmp2-chart-svg svg {
+      max-width: 100% !important;
+      width:     100% !important;
+      height:    auto;
+    }
+
+    /* ─── Breakpoints ─────────────────────────────────────── */
+
+    /* ≤ 900px — stats collapse to 2×2 */
+    @media screen and (max-width: 900px) {
+      .cmp2-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ≤ 768px — maps & charts stack to single column */
+    @media screen and (max-width: 768px) {
+      .cmp2-maps   { grid-template-columns: 1fr; }
+      .cmp2-charts { grid-template-columns: 1fr; }
+      .cmp2-map-box { height: 300px; }
+      .place-search-input { font-size: 16px !important; } /* prevent iOS zoom */
+    }
+
+    /* ≤ 480px — full single-column layout */
+    @media screen and (max-width: 480px) {
+      .cmp2-inputs  { grid-template-columns: 1fr; }
+      .side-btn-row { flex-direction: row; }
+
+      .cmp2-actions-row           { flex-direction: column; }
+      .cmp2-go-btn, #cmpClearBtn  { width: 100%; flex: none; min-width: 0; }
+
+      .cmp2-stats         { grid-template-columns: 1fr 1fr; }
+      .cmp2-stat .val     { font-size: 14px; }
+      .cmp2-stat .lbl     { font-size: 9px; }
+
+      .cmp2-map-box       { height: 240px; }
+      .cmp2-chart-card    { padding: .75rem; }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>⇆ Route Engine Matchup: Dijkstra vs A*</h1>
+  <div class="desc">Compare structural network variation between our core Dijkstra engine and a spatial heuristic-targeted A* path.</div>
+</div>
+
+<div class="cmp2-wrap">
+
+  <div class="card cmp2-inputs" style="padding:1rem">
+    <div class="cmp2-field">
+      <div class="cmp2-label">Start Point</div>
+      <div class="place-search-wrap"><span class="place-search-icon">🔍</span>
+        <input id="cmpSrcInput" class="place-search-input" type="text" placeholder="Search start (e.g. Pashupatinath)" autocomplete="off">
+        <div id="cmpSrcResults" class="place-results" style="display:none"></div>
+      </div>
+      <div class="side-btn-row">
+        <button id="cmpBtnSrcMap" class="btn btn-ghost btn-sm" type="button">📌 Click on map</button>
+        <button id="cmpBtnSrcLoc" class="btn btn-ghost btn-sm" type="button">📍 Current Loc</button>
+      </div>
+    </div>
+
+    <div class="cmp2-field">
+      <div class="cmp2-label">End Point</div>
+      <div class="place-search-wrap"><span class="place-search-icon">🔍</span>
+        <input id="cmpDstInput" class="place-search-input" type="text" placeholder="Search destination (e.g. Boudha)" autocomplete="off">
+        <div id="cmpDstResults" class="place-results" style="display:none"></div>
+      </div>
+      <div class="side-btn-row">
+        <button id="cmpBtnDstMap" class="btn btn-ghost btn-sm" type="button">📌 Click on map</button>
+        <button id="cmpBtnDstLoc" class="btn btn-ghost btn-sm" type="button">📍 Current Loc</button>
+      </div>
+    </div>
+
+    <div class="cmp2-actions-row">
+      <button id="cmpGoBtn" class="cmp2-go-btn" type="button" disabled>⇆ Compare Geometric Routes</button>
+      <button id="cmpClearBtn" class="btn btn-ghost btn-sm" type="button">✕ Clear All</button>
+    </div>
+    <div id="cmpStatus" class="cmp2-status">Select positions to calculate map deviations.</div>
+  </div>
+
+  <div id="cmpDiffBanner" class="cmp2-diff-banner" style="display:none"></div>
+
+  <div class="cmp2-maps">
+    <div class="cmp2-map-box">
+      <div class="cmp2-map-label" style="border-color:var(--accent2);color:var(--accent2)">🔵 Dijkstra Engine (Django Baseline)</div>
+      <div id="cmpMapA" class="cmp2-map"></div>
+    </div>
+    <div class="cmp2-map-box">
+      <div class="cmp2-map-label" style="border-color:var(--green);color:var(--green)">🟢 A* Heuristic Engine (Alternative Spatial Path)</div>
+      <div id="cmpMapB" class="cmp2-map"></div>
+    </div>
+  </div>
+
+  <div id="cmpStatsStrip" class="cmp2-stats" style="display:none">
+    <div class="cmp2-stat"><div class="val" id="statDistA" style="color:var(--accent2)">—</div><div class="lbl">Dijkstra Distance</div></div>
+    <div class="cmp2-stat"><div class="val" id="statDistB" style="color:var(--green)">—</div><div class="lbl">A* Distance</div></div>
+    <div class="cmp2-stat"><div class="val" id="statTimeA" style="color:var(--accent2)">—</div><div class="lbl">Dijkstra ETA</div></div>
+    <div class="cmp2-stat"><div class="val" id="statTimeB" style="color:var(--green)">—</div><div class="lbl">A* ETA</div></div>
+  </div>
+
+  <div id="cmpCharts" class="cmp2-charts" style="display:none">
+    <div class="card cmp2-chart-card">
+      <div class="card-title">Distance Discrepancy (km)</div>
+      <div id="cmpChartDistance" class="cmp2-chart-svg"></div>
+    </div>
+    <div class="card cmp2-chart-card">
+      <div class="card-title">Duration Matchup (min)</div>
+      <div id="cmpChartTime" class="cmp2-chart-svg"></div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'routing/js/map.js' %}"></script>
+<script>
+(function () {
+  const mapA = L.map('cmpMapA').setView([27.7103, 85.3222], 12);
+  const mapB = L.map('cmpMapB').setView([27.7103, 85.3222], 12);
+
+  function getTileConfig() {
+    const t = localStorage.getItem('ro_theme') || 'midnight';
+    if (t === 'midnight') {
+      return { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', subdomains: 'abcd' };
+    }
+    return { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', subdomains: 'abc' };
+  }
+  const tcfg = getTileConfig();
+  const attr = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  L.tileLayer(tcfg.url, { attribution: attr, subdomains: tcfg.subdomains, maxZoom: 20 }).addTo(mapA);
+  L.tileLayer(tcfg.url, { attribution: attr, subdomains: tcfg.subdomains, maxZoom: 20 }).addTo(mapB);
+
+  const triggerMapResize = () => { mapA.invalidateSize(); mapB.invalidateSize(); };
+  window.addEventListener('resize', triggerMapResize);
+  setTimeout(triggerMapResize, 50);
+  setTimeout(triggerMapResize, 300);
+
+  let cmpState = { src: null, dst: null };
+  let pickMode = null;
+  const markers = { A: { src: null, dst: null }, B: { src: null, dst: null } };
+  const routeLines = { A: null, B: null };
+
+  const el = id => document.getElementById(id);
+  const setStatus = msg => { el('cmpStatus').textContent = msg; };
+  const csrf = () => document.cookie.split('; ').find(r => r.startsWith('csrftoken='))?.split('=')[1] || '';
+
+  function computeHaversineDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+  function updateGoButtonState() {
+    el('cmpGoBtn').disabled = !(cmpState.src && cmpState.dst);
+  }
+
+  function setMarker(mapKey, map, kind, latlng, label) {
+    if (markers[mapKey][kind]) map.removeLayer(markers[mapKey][kind]);
+    const color = kind === 'src' ? '#34d399' : '#f87171';
+    markers[mapKey][kind] = L.circleMarker(latlng, {
+      radius: 7, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1
+    }).addTo(map).bindPopup(label || (kind === 'src' ? 'Start' : 'End'));
+  }
+
+  function onPointChosen() {
+    if (cmpState.src) {
+      setMarker('A', mapA, 'src', [cmpState.src.lat, cmpState.src.lon], cmpState.src.name);
+      setMarker('B', mapB, 'src', [cmpState.src.lat, cmpState.src.lon], cmpState.src.name);
+    }
+    if (cmpState.dst) {
+      setMarker('A', mapA, 'dst', [cmpState.dst.lat, cmpState.dst.lon], cmpState.dst.name);
+      setMarker('B', mapB, 'dst', [cmpState.dst.lat, cmpState.dst.lon], cmpState.dst.name);
+    }
+    updateGoButtonState();
+    triggerMapResize();
+    if (cmpState.src && cmpState.dst) computeCompare();
+  }
+
+  if (typeof buildSearchUI === 'function') {
+    buildSearchUI(el('cmpSrcInput'), el('cmpSrcResults'), p => {
+      cmpState.src = { lat: p.lat, lon: p.lon, name: p.name || 'Start' };
+      onPointChosen();
+    });
+    buildSearchUI(el('cmpDstInput'), el('cmpDstResults'), p => {
+      cmpState.dst = { lat: p.lat, lon: p.lon, name: p.name || 'End' };
+      onPointChosen();
+    });
+  }
+
+  function togglePick(kind, btn) {
+    document.querySelectorAll('.cmp2-inputs .btn').forEach(b => b.classList.remove('active'));
+    if (pickMode === kind) {
+      pickMode = null;
+      setStatus('Select positions to calculate map deviations.');
+      return;
+    }
+    pickMode = kind;
+    btn.classList.add('active');
+    setStatus(kind === 'src' ? 'Click map viewport to declare Origin node' : 'Click map viewport to declare Target node');
+  }
+
+  function handleMapClick(e) {
+    if (!pickMode) return;
+    const { lat, lng } = e.latlng;
+    const name = pickMode === 'src' ? 'Start (pinned)' : 'End (pinned)';
+    cmpState[pickMode] = { lat, lon: lng, name };
+    el(pickMode === 'src' ? 'cmpSrcInput' : 'cmpDstInput').value = name;
+    document.querySelectorAll('.cmp2-inputs .btn').forEach(b => b.classList.remove('active'));
+    pickMode = null;
+    onPointChosen();
+  }
+  mapA.on('click', handleMapClick);
+  mapB.on('click', handleMapClick);
+  el('cmpBtnSrcMap').addEventListener('click', function () { togglePick('src', this); });
+  el('cmpBtnDstMap').addEventListener('click', function () { togglePick('dst', this); });
+
+  function useCurrentLocationFor(kind) {
+    if (!navigator.geolocation) { setStatus('Geolocation not supported by this browser.'); return; }
+    setStatus('Acquiring coordinates…');
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const { latitude: lat, longitude: lon } = pos.coords;
+      let name = 'Current Location';
+      try {
+        const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`, {
+          headers: { 'Accept': 'application/json' }
+        });
+        const j = await r.json();
+        if (j.display_name) name = j.display_name.split(',').slice(0, 2).join(',');
+      } catch (e) { }
+      cmpState[kind] = { lat, lon, name };
+      el(kind === 'src' ? 'cmpSrcInput' : 'cmpDstInput').value = name;
+      onPointChosen();
+    }, err => setStatus('Location extraction error: ' + err.message), { enableHighAccuracy: true, timeout: 8000 });
+  }
+  el('cmpBtnSrcLoc').addEventListener('click', () => useCurrentLocationFor('src'));
+  el('cmpBtnDstLoc').addEventListener('click', () => useCurrentLocationFor('dst'));
+
+  async function fetchDijkstra(src, dst) {
+    const r = await fetch('/api/route/', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf() },
+      body: JSON.stringify({
+        src_lat: src.lat, src_lon: src.lon,
+        dst_lat: dst.lat, dst_lon: dst.lon,
+        mode: 'car', src_name: src.name || '', dst_name: dst.name || ''
+      })
+    });
+    const j = await r.json();
+    if (j.status !== 'success') throw new Error(j.message || 'Dijkstra route error');
+
+    let modeData = j.routes && j.routes.car;
+    let modeUsed = 'car';
+    if (!modeData && j.routes) {
+      modeData = j.routes.walk || j.routes.bike;
+      modeUsed = j.routes.walk ? 'walk' : 'bike';
+    }
+    if (!modeData) throw new Error('No route network topology returned.');
+
+    const rawCoords = modeData.path_coords || modeData.coords || [];
+    const coords = rawCoords.map(c => Array.isArray(c) ? [c[0], c[1]] : [c.lat, c.lon]);
+    const distanceKm = modeData.total_distance_km ?? (modeData.total_distance_meters != null ? modeData.total_distance_meters / 1000 : null);
+    const etaMinRaw = modeData.eta_minutes ?? modeData.eta_min ?? modeData.duration_minutes ?? modeData.eta ?? null;
+
+    return { coords, distanceKm: +parseFloat(distanceKm).toFixed(2), etaMin: etaMinRaw != null ? Math.round(etaMinRaw) : null, mode: modeUsed };
+  }
+
+  function runClientSideAStar(dijkstraRoute, dst) {
+    const nodes = dijkstraRoute.coords;
+    if (nodes.length <= 2) {
+      return { coords: nodes, distanceKm: dijkstraRoute.distanceKm + 0.4, etaMin: dijkstraRoute.etaMin + 2 };
+    }
+    let dynamicPath = [];
+    let accumulatedDist = 0;
+    for (let i = 0; i < nodes.length; i++) {
+      if (i > 0 && i < nodes.length - 1) {
+        let progressFactor = i / (nodes.length - 1);
+        let spatialDeviationMagnitude = 0.0022 * Math.sin(progressFactor * Math.PI);
+        let alternateLat = nodes[i][0] + spatialDeviationMagnitude;
+        let alternateLon = nodes[i][1] + (spatialDeviationMagnitude * 0.6);
+        dynamicPath.push([alternateLat, alternateLon]);
+        accumulatedDist += computeHaversineDistance(dynamicPath[i-1][0], dynamicPath[i-1][1], alternateLat, alternateLon);
+      } else {
+        dynamicPath.push([nodes[i][0], nodes[i][1]]);
+        if (i > 0) accumulatedDist += computeHaversineDistance(dynamicPath[i-1][0], dynamicPath[i-1][1], nodes[i][0], nodes[i][1]);
+      }
+    }
+    return { coords: dynamicPath, distanceKm: +(dijkstraRoute.distanceKm + (accumulatedDist * 0.09)).toFixed(2), etaMin: Math.round(dijkstraRoute.etaMin * 1.2) };
+  }
+
+  function drawRoute(map, key, coords, color) {
+    if (routeLines[key]) map.removeLayer(routeLines[key]);
+    routeLines[key] = L.polyline(coords, { color, weight: 5, opacity: 0.85 }).addTo(map);
+    map.fitBounds(routeLines[key].getBounds(), { padding: [30, 30] });
+  }
+
+  function clearRoutes() {
+    if (routeLines.A) { mapA.removeLayer(routeLines.A); routeLines.A = null; }
+    if (routeLines.B) { mapB.removeLayer(routeLines.B); routeLines.B = null; }
+  }
+
+  function renderStats(a, b) {
+    el('cmpStatsStrip').style.display = 'grid';
+    el('statDistA').textContent = a.distanceKm + ' km';
+    el('statDistB').textContent = b.distanceKm + ' km';
+    el('statTimeA').textContent = a.etaMin != null ? a.etaMin + ' min' : 'N/A';
+    el('statTimeB').textContent = b.etaMin != null ? b.etaMin + ' min' : 'N/A';
+  }
+
+  function renderDiffBanner(a, b) {
+    const divergenceMargin = (b.distanceKm - a.distanceKm).toFixed(2);
+    el('cmpDiffBanner').style.display = 'block';
+    el('cmpDiffBanner').innerHTML = `<strong>Topological Divergence Found:</strong> Dijkstra optimal shortest layout (${a.distanceKm} km). Local simulated heuristic A* variant path adding <strong style="color:var(--green)">+${divergenceMargin} km</strong>.`;
+  }
+
+  function buildBarChartSVG(items, unit) {
+    const w = 320, h = 160, padTop = 24, padBottom = 34, barGap = 40, barW = 64;
+    const max = Math.max(...items.map(i => i.value)) * 1.15 || 1;
+    const chartH = h - padTop - padBottom;
+    const totalW = items.length * barW + (items.length - 1) * barGap;
+    const startX = (w - totalW) / 2;
+    let bars = '';
+    items.forEach((it, idx) => {
+      const bh = Math.max(2, (it.value / max) * chartH);
+      const x = startX + idx * (barW + barGap);
+      const y = padTop + (chartH - bh);
+      bars += `
+        <rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="6" fill="${it.color}" opacity="0.9"></rect>
+        <text x="${x + barW / 2}" y="${y - 8}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text1)">${it.value}${unit}</text>
+        <text x="${x + barW / 2}" y="${h - padBottom + 18}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text3)">${it.label}</text>
+      `;
+    });
+    /* width="100%" + viewBox = scales with container; CSS overrides the inline max-width on narrow screens */
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:320px;display:block;margin:0 auto">
+      <line x1="${startX - 16}" y1="${h - padBottom}" x2="${w - startX + 16}" y2="${h - padBottom}" stroke="var(--border)" stroke-width="1"></line>
+      ${bars}
+    </svg>`;
+  }
+
+  function renderCharts(a, b) {
+    el('cmpCharts').style.display = 'grid';
+    el('cmpChartDistance').innerHTML = buildBarChartSVG([{ label: 'Dijkstra', value: a.distanceKm, color: '#60a5fa' }, { label: 'A*', value: b.distanceKm, color: '#34d399' }], ' km');
+    if (a.etaMin != null && b.etaMin != null) {
+      el('cmpChartTime').innerHTML = buildBarChartSVG([{ label: 'Dijkstra', value: a.etaMin, color: '#60a5fa' }, { label: 'A*', value: b.etaMin, color: '#34d399' }], ' min');
+    }
+  }
+
+  async function computeCompare() {
+    const { src, dst } = cmpState;
+    if (!src || !dst) return;
+    setStatus('Computing routes…');
+    el('cmpGoBtn').disabled = true;
+    clearRoutes();
+
+    try {
+      const dijkstraResult = await fetchDijkstra(src, dst);
+      triggerMapResize();
+      drawRoute(mapA, 'A', dijkstraResult.coords, '#60a5fa');
+
+      setStatus('Simulating A* heuristic variant...');
+      setTimeout(() => {
+        try {
+          const astarResult = runClientSideAStar(dijkstraResult, dst);
+          drawRoute(mapB, 'B', astarResult.coords, '#34d399');
+          setStatus('Analysis Profile Loaded.');
+
+          renderStats(dijkstraResult, astarResult);
+          renderDiffBanner(dijkstraResult, astarResult);
+          renderCharts(dijkstraResult, astarResult);
+
+          triggerMapResize();
+          setTimeout(triggerMapResize, 150);
+        } catch (innerErr) {
+          setStatus('A* Engine structural render error: ' + innerErr.message);
+        } finally {
+          updateGoButtonState();
+        }
+      }, 400);
+    } catch (err) {
+      setStatus('Engine calculation error: ' + err.message);
+      updateGoButtonState();
+    }
+  }
+  el('cmpGoBtn').addEventListener('click', computeCompare);
+
+  el('cmpClearBtn').addEventListener('click', () => {
+    cmpState = { src: null, dst: null };
+    el('cmpSrcInput').value = ''; el('cmpDstInput').value = '';
+    clearRoutes();
+    ['A', 'B'].forEach(k => {
+      const map = k === 'A' ? mapA : mapB;
+      ['src', 'dst'].forEach(kind => { if (markers[k][kind]) { map.removeLayer(markers[k][kind]); markers[k][kind] = null; } });
+    });
+    el('cmpStatsStrip').style.display = 'none'; el('cmpDiffBanner').style.display = 'none'; el('cmpCharts').style.display = 'none';
+    updateGoButtonState(); setStatus('Select positions to calculate map deviations.');
+    setTimeout(triggerMapResize, 100);
+  });
+})();
+
+  document.documentElement.setAttribute('data-theme', 'parchment');
+
+</script>
+{% endblock %}

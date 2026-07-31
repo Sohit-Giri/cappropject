@@ -1,0 +1,71 @@
+{% extends 'routing/base.html' %}
+{% block title %}Leaderboard — RouteOptima{% endblock %}
+{% block content %}
+<style>
+  /* --- RESPONSIVE LAYOUT FIXES --- */
+  @media screen and (max-width: 768px) {
+    .app-layout { height: auto !important; overflow: visible !important; }
+    .main-content { height: auto !important; overflow: visible !important; padding: 0 1rem 2rem 1rem !important; }
+    
+    .leaderboard-row { padding: 0.75rem !important; }
+    .leaderboard-name { font-size: 14px !important; }
+  }
+
+  /* List container and row styling */
+  #board { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
+  
+  .leaderboard-row {
+    display: grid;
+    grid-template-columns: 40px 1fr auto auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg0, #ffffff);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 8px;
+  }
+  
+  .leaderboard-rank { font-size: 1.25rem; text-align: center; }
+  .leaderboard-name { font-weight: 600; }
+  .leaderboard-km { color: var(--accent, #3b82f6); font-weight: 700; }
+  .leaderboard-routes { color: var(--text3, #6b7280); font-size: 12px; }
+</style>
+
+<div class="page-header">
+  <h1>🏆 Leaderboard</h1>
+  <div class="desc">Top users by total distance computed.</div>
+</div>
+
+<div class="page-body">
+  <div id="board">
+    <div style="text-align:center; color:var(--text3); padding:2rem">Loading…</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const medals = ['🥇','🥈','🥉'];
+fetch('/api/leaderboard-data/', {credentials:'same-origin'})
+  .then(r=>r.json()).then(d=>{
+    const board = document.getElementById('board');
+    if (!d.leaderboard || !d.leaderboard.length) {
+      board.innerHTML = '<div class="card" style="text-align:center; padding:2rem; color:var(--text2)">No data yet — be the first!</div>';
+      return;
+    }
+    board.innerHTML = '';
+    d.leaderboard.forEach((u, i) => {
+      board.innerHTML += `
+        <div class="leaderboard-row">
+          <div class="leaderboard-rank">${medals[i] || (i+1)}</div>
+          <div class="leaderboard-name">${u.user__username}</div>
+          <div class="leaderboard-km">${(u.total_km||0).toFixed(2)} km</div>
+          <div class="leaderboard-routes">${u.routes} routes</div>
+        </div>`;
+    });
+  });
+  document.documentElement.setAttribute('data-theme', 'parchment');
+
+
+</script>
+{% endblock %}

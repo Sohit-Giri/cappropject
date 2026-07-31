@@ -1,0 +1,716 @@
+{% extends 'routing/base.html' %}
+{% load static %}
+{% block title %}RouteOptima — Shortest Path Optimizer for Kathmandu{% endblock %}
+
+{% block public %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg0: #fcfaf2;
+    --bg1: #ffffff;
+    --bg2: #f4f1e6;
+    --bg3: #e9e4d5;
+    --bg4: #dbd4c0;
+    --accent: #2563eb;
+    --accent2: #1d4ed8;
+    --accent3: #1e40af;
+    --text1: #000000;
+    --text2: #1e293b;
+    --text3: #475569;
+    --green: #16a34a;
+    --red: #dc2626;
+    --yellow: #d97706;
+    --purple: #7c3aed;
+    --border: rgba(37, 99, 235, 0.15);
+    --card-glow: rgba(37, 99, 235, 0.04);
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg0);
+    color: var(--text1);
+    perspective: 1000px;
+  }
+
+  /* Centered Grid Navigation Layout */
+  .landing-nav {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 0.85rem 1.5rem;
+    background-color: var(--bg1);
+    border-bottom: 1px solid var(--border);
+    width: 100%;
+    box-sizing: border-box;
+    position: sticky; 
+    top: 0;
+    z-index: 1000;
+    backdrop-filter: blur(12px);
+  }
+
+  .landing-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    perspective: 400px;
+    justify-self: start; /* Keeps logo anchored to the left */
+  }
+
+  .landing-logo .icon {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #ffffff;
+    transition: transform .45s cubic-bezier(.2,.8,.3,1.3), box-shadow .45s ease;
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+
+  .landing-logo:hover .icon {
+    transform: rotateY(180deg) rotateX(8deg) translateZ(4px);
+    box-shadow: 0 8px 18px -4px var(--border), 0 2px 6px rgba(37,99,235,0.25);
+  }
+
+  .landing-logo .name {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text1);
+    letter-spacing: -.3px;
+  }
+
+  .landing-logo .sub {
+    font-size: 10px;
+    color: var(--text3);
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Centers items inside the middle column */
+    gap: 1.5rem;
+    grid-column: 2; /* Forces navigation links to dead center */
+  }
+
+  .nav-links a {
+    position: relative;
+    font-size: 14px;
+    color: var(--text2);
+    text-decoration: none;
+    transition: color .2s;
+    padding-bottom: 3px;
+  }
+
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .3s cubic-bezier(.2,.8,.3,1);
+  }
+
+  .nav-links a:hover { color: var(--text1); }
+  .nav-links a:hover::after { transform: scaleX(1); }
+  .nav-links a:focus-visible,
+  .btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 5rem 2rem 4rem;
+    background: radial-gradient(ellipse at 60% 40%, var(--card-glow) 0%, transparent 60%);
+    overflow: hidden;
+  }
+
+  /* Secure Box Blueprint Bounds to keep car inside */
+  .routing-animation-container {
+    width: 100%;
+    max-width: 480px;
+    height: 120px;
+    margin-bottom: 1rem;
+    position: relative;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.4);
+    padding: 10px;
+    overflow: hidden;
+    cursor: crosshair;
+    transform-style: preserve-3d;
+    transition: transform .4s cubic-bezier(.2,.8,.3,1), box-shadow .4s ease;
+    will-change: transform;
+  }
+
+  .routing-animation-container:hover {
+    box-shadow: 0 18px 36px -18px var(--border), 0 4px 14px rgba(37,99,235,0.12);
+  }
+
+  .routing-canvas {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Car Tracker Asset Configuration */
+  .animated-car-tracker {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
+    left: 0;
+    top: 0;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s cubic-bezier(0.25, 0.8, 0.25, 1);
+    filter: drop-shadow(0 3px 4px rgba(0,0,0,0.15));
+  }
+
+  .pulse-node {
+    animation: nodePulse 2s infinite ease-in-out;
+  }
+
+  @keyframes nodePulse {
+    0%, 100% { transform: scale(1); opacity: 0.4; }
+    50% { transform: scale(1.3); opacity: 1; }
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: .3rem .9rem;
+    font-size: 12px;
+    color: var(--accent2);
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    transition: transform .35s cubic-bezier(.2,.8,.3,1.2), box-shadow .35s ease;
+    will-change: transform;
+  }
+
+  .hero-badge:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 10px 22px -10px var(--border);
+  }
+
+  .animated-3d-title {
+    font-size: clamp(2.4rem, 5.5vw, 4.2rem);
+    font-weight: 900;
+    letter-spacing: -2px;
+    line-height: 1.15;
+    margin-bottom: 1.5rem;
+    color: var(--text1);
+    transform-style: preserve-3d;
+    animation: floatingPerspective 6s ease-in-out infinite;
+  }
+
+  .animated-3d-title .layer-base {
+    display: block;
+    text-shadow: 0 1px 0 var(--bg4), 0 2px 0 var(--bg3), 0 3px 0 rgba(0,0,0,0.08);
+  }
+
+  .dynamic-switch-container {
+    display: inline-block;
+    position: relative;
+    vertical-align: top;
+    height: 1.25em;
+    overflow: hidden;
+    text-align: left;
+    padding-right: 4px;
+  }
+
+  .dynamic-switch-container span {
+    color: var(--accent);
+    display: block;
+    font-weight: 900;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    transform: rotateX(-90deg) translateZ(30px);
+    transform-origin: 50% 50% -25px;
+    transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+  }
+
+  .dynamic-switch-container span.active {
+    opacity: 1;
+    transform: rotateX(0deg) translateZ(0px);
+    position: relative;
+  }
+
+  .dynamic-switch-container span.leaving {
+    opacity: 0;
+    transform: rotateX(90deg) translateZ(30px);
+    position: absolute;
+  }
+
+  @keyframes floatingPerspective {
+    0%, 100% { transform: rotateX(4deg) rotateY(-4deg) translateZ(0); }
+    50% { transform: rotateX(-2deg) rotateY(4deg) translateZ(10px); }
+  }
+
+  .hero p {
+    font-size: 1.1rem;
+    color: var(--text2);
+    max-width: 560px;
+    line-height: 1.65;
+    margin-bottom: 2.5rem;
+    transition: transform .3s ease;
+    will-change: transform;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    perspective: 500px;
+  }
+
+  .districts-section {
+    background: var(--bg1);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 3rem 2rem;
+    text-align: center;
+  }
+
+  .districts-section h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: .6rem; }
+  .districts-section p { color: var(--text2); margin-bottom: 2rem; font-size: 14px; }
+
+  .single-district-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    max-width: 600px;
+    margin: 0 auto;
+    perspective: 600px;
+  }
+
+  .district-chips { display: flex; gap: .75rem; justify-content: center; }
+
+  .district-chip.primary-focus {
+    background: var(--bg2);
+    border: 2px solid var(--accent);
+    color: var(--text1);
+    font-size: 16px;
+    padding: .6rem 1.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 30px;
+    transition: transform .4s cubic-bezier(.2,.8,.3,1.15), box-shadow .4s ease, background .3s ease;
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+
+  .district-chip.primary-focus:hover {
+    transform: translateY(-5px) rotateX(10deg) scale(1.04);
+    box-shadow: 0 16px 30px -14px var(--border);
+    background: var(--bg3);
+  }
+
+  .coverage-meta-text {
+    font-size: 13px;
+    color: var(--text3);
+    max-width: 500px;
+    line-height: 1.5;
+  }
+
+  .stats-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    perspective: 900px;
+  }
+
+  .stats-section .s {
+    background: var(--bg0);
+    padding: 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform .1s linear, box-shadow .35s ease, background .35s ease;
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+
+  .stats-section .s::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .45s cubic-bezier(.2,.8,.3,1);
+  }
+
+  .stats-section .s:hover {
+    background: var(--bg2);
+    box-shadow: 0 20px 34px -20px var(--border);
+    z-index: 2;
+  }
+
+  .stats-section .s:hover::before { transform: scaleX(1); }
+
+  .stats-section .s .val {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--accent);
+    display: inline-block;
+    transition: transform .3s cubic-bezier(.2,.8,.3,1.3);
+  }
+
+  .stats-section .s:hover .val { transform: translateZ(20px) scale(1.08); }
+
+  .stats-section .s .lbl { font-size: 12px; color: var(--text3); margin-top: .3rem; }
+
+  .landing-footer {
+    text-align: center;
+    padding: 2rem;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text3);
+    background: var(--bg1);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    padding: .7rem 1.3rem;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .3s cubic-bezier(.2,.8,.3,1.2), box-shadow .3s ease, background .2s ease;
+    text-decoration: none;
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+
+  .btn-primary { background: var(--accent); color: #ffffff; }
+  .btn-primary:hover {
+    background: var(--accent2);
+    transform: translateY(-3px) rotateX(10deg) translateZ(6px);
+    box-shadow: 0 16px 26px -12px var(--accent3);
+  }
+  .btn-primary:active { transform: translateY(0) rotateX(0) scale(.97); box-shadow: none; }
+
+  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover {
+    background: var(--bg2);
+    color: var(--text1);
+    transform: translateY(-3px) rotateX(10deg) translateZ(6px);
+    box-shadow: 0 14px 22px -14px var(--border);
+  }
+  .btn-ghost:active { transform: translateY(0) rotateX(0) scale(.97); }
+
+  .btn-lg { padding: .9rem 2rem; font-size: 16px; border-radius: 10px; }
+
+  /* Scroll-reveal: sections rise into place with a slight 3D rotation */
+  .reveal {
+    opacity: 0;
+    transform: translateY(36px) rotateX(8deg);
+    transform-origin: top center;
+    transition: opacity .8s ease, transform .8s cubic-bezier(.2,.8,.3,1);
+  }
+  .reveal.in-view { opacity: 1; transform: none; }
+
+  .stats-section.reveal .s { transition-delay: var(--stagger, 0ms); }
+
+  @media (max-width: 580px) {
+    .landing-nav { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.65rem 0.5rem; }
+    .nav-links { gap: 0.85rem; }
+    .hero { padding: 3rem 1rem 3.5rem !important; }
+    .routing-animation-container { max-width: 340px; height: 100px; }
+    .animated-3d-title { font-size: 1.8rem !important; }
+    .hero p { font-size: 0.9rem !important; }
+    .stats-section { grid-template-columns: repeat(2, 1fr) !important; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+</style>
+
+
+<nav class="landing-nav">
+  <a href="{% url 'landing' %}" class="landing-logo">
+    <div class="icon">&#9672;</div>
+    <div>
+      <div class="name">RouteOptima</div>
+      <div class="sub">Dijkstra SPF</div>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a href="{% url 'landing' %}">Home</a>
+    <a href="{% url 'about' %}">About</a>
+    <a href="{% url 'docs' %}">Docs</a>
+    <a href="{% url 'team' %}">Team</a>
+    <a href="{% url 'help' %}">Help</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <!-- Secure Box Container with Integrated Mouse-Over Traversal Coordinates -->
+  <div class="routing-animation-container" id="interactiveBox">
+    <div class="animated-car-tracker" id="carAsset">🚗</div>
+    <svg class="routing-canvas" id="routingSvg" viewBox="0 0 480 120" preserveAspectRatio="xMidYMid meet">
+      <!-- Unselected background network segments -->
+      <path d="M 40,85 L 130,100 L 240,50 M 40,85 L 110,35 L 180,35 L 240,50 M 240,50 L 330,105 L 440,45 M 240,50 L 310,25 L 400,20 L 440,45" 
+            stroke="var(--bg3)" stroke-width="2" stroke-dasharray="4 4" fill="none" />
+      
+      <!-- Target Highlighted Core Track String Path -->
+      <path id="shortestPathTrack" d="M 40,85 C 100,30 160,105 240,50 C 310,15 370,95 440,45" 
+            stroke="var(--accent)" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      
+      <!-- Node Points Matrix Intersections -->
+      <circle cx="40" cy="85" r="5" fill="var(--accent3)" />
+      <circle cx="110" cy="35" r="4" fill="var(--text3)" opacity="0.4" />
+      <circle cx="130" cy="100" r="4" fill="var(--text3)" opacity="0.4" />
+      <circle cx="240" cy="50" r="6" fill="var(--accent)" class="pulse-node" style="transform-origin: 240px 50px;" />
+      <circle cx="330" cy="105" r="4" fill="var(--text3)" opacity="0.4" />
+      <circle cx="400" cy="20" r="4" fill="var(--text3)" opacity="0.4" />
+      <circle cx="440" cy="45" r="5" fill="var(--green)" />
+    </svg>
+  </div>
+
+  <div class="hero-badge">🗺 Nepal Road Network · Dijkstra SPF · Kathmandu District</div>
+  
+  <h1 class="animated-3d-title">
+    <span class="layer-base">Find the 
+      <div class="dynamic-switch-container" id="flipperContainer">
+        <span class="active">Shortest Route</span>
+        <span>Optimal Drive</span>
+        <span>Alley Pathway</span>
+        <span>Vehicle Course</span>
+      </div>
+    </span>
+    <span class="layer-base" style="color: var(--text2); font-weight:800; font-size: 0.85em;">Across the City</span>
+  </h1>
+
+  <p>RouteOptima uses Dijkstra's shortest-path algorithm on real OpenStreetMap spatial datasets optimized for Kathmandu district's topological road intersections.</p>
+  
+  <div class="hero-actions">
+    <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Log In</a>
+    <a href="{% url 'register' %}" class="btn btn-ghost btn-lg">Sign Up</a>
+  </div>
+</section>
+
+<div class="districts-section reveal">
+  <h2>Coverage Focus</h2>
+  <p>High-fidelity structural graphs parsed straight from OpenStreetMap datasets.</p>
+  <div class="single-district-container">
+    <div class="district-chips">
+      <span class="district-chip primary-focus">📍 Kathmandu District</span>
+    </div>
+    <p class="coverage-meta-text">Standalone system configuration specialized for dense urban mapping frameworks, local alley tracking, and core ring-road topology segments.</p>
+  </div>
+</div>
+
+<div class="stats-section reveal">
+  <div class="s"><div class="val">37,652</div><div class="lbl">Road Nodes</div></div>
+  <div class="s"><div class="val">93,614</div><div class="lbl">Graph Edges</div></div>
+  <div class="s"><div class="val">Dijkstra</div><div class="lbl">Core Algorithm</div></div>
+  <div class="s"><div class="val">Live</div><div class="lbl">OSM Graph Data</div></div>
+</div>
+
+<footer class="landing-footer">
+  <p>RouteOptima &copy; 2026 — IIMS College · Group 36 · Supervised by Nabeen Kumar Aryal</p>
+</footer>
+
+<script>
+  document.documentElement.setAttribute('data-theme', 'parchment');
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // 1. Core Automated Headline Switching Mechanic
+    const container = document.getElementById("flipperContainer");
+    const phrases = container.querySelectorAll("span");
+    let currentIdx = 0;
+
+    setInterval(() => {
+      const activePhrase = phrases[currentIdx];
+      currentIdx = (currentIdx + 1) % phrases.length;
+      const nextPhrase = phrases[currentIdx];
+      activePhrase.classList.remove("active");
+      activePhrase.classList.add("leaving");
+      nextPhrase.classList.add("active");
+      setTimeout(() => { activePhrase.classList.remove("leaving"); }, 600);
+    }, 3000);
+
+    // 2. High Performance Box-Bounded Interactive Path Traversal Tracker
+    const interactiveBox = document.getElementById("interactiveBox");
+    const svgElement = document.getElementById("routingSvg");
+    const trackPath = document.getElementById("shortestPathTrack");
+    const carAsset = document.getElementById("carAsset");
+
+    const totalLength = trackPath.getTotalLength();
+    let currentPercent = 0;
+    let targetPercent = 0;
+    let isHovered = false;
+
+    // Mathematical projection mapping coordinates locally within standard viewbox proportions
+    function updateCarPosition(percent) {
+      const distance = (percent / 100) * totalLength;
+      const pathPoint = trackPath.getPointAtLength(distance);
+
+      // Map SVG points perfectly to the client bounding bounding dimensions
+      const svgRect = svgElement.getBoundingClientRect();
+      const containerRect = interactiveBox.getBoundingClientRect();
+
+      // Matrix scaling calculations
+      const scaleX = svgRect.width / 480;
+      const scaleY = svgRect.height / 120;
+
+      // Calculate absolute positions relative to parent canvas box bounds
+      const absoluteX = (svgRect.left - containerRect.left) + (pathPoint.x * scaleX);
+      const absoluteY = (svgRect.top - containerRect.top) + (pathPoint.y * scaleY);
+
+      carAsset.style.left = `${absoluteX}px`;
+      carAsset.style.top = `${absoluteY}px`;
+    }
+
+    // Capture standard relative horizontal coordinates over interactive container layout area
+    interactiveBox.addEventListener("mousemove", (e) => {
+      const rect = interactiveBox.getBoundingClientRect();
+      const relativeX = e.clientX - rect.left;
+      const relativeY = e.clientY - rect.top;
+
+      // Target percentages bound safely between 0% and 100% matrix bounds
+      targetPercent = Math.min(Math.max((relativeX / rect.width) * 100, 0), 100);
+      isHovered = true;
+
+      // 3D tilt: box leans away from cursor position for a true perspective feel
+      if (!reduceMotion) {
+        const tiltY = ((relativeX / rect.width) - 0.5) * 14;
+        const tiltX = ((relativeY / rect.height) - 0.5) * -14;
+        interactiveBox.style.transform = `perspective(800px) rotateY(${tiltY}deg) rotateX(${tiltX}deg)`;
+      }
+    });
+
+    interactiveBox.addEventListener("mouseleave", () => {
+      isHovered = false;
+      interactiveBox.style.transform = "perspective(800px) rotateY(0deg) rotateX(0deg)";
+    });
+
+    // Unified animation frame handler loops safely
+    function renderLoop() {
+      if (isHovered) {
+        // Linear interpolation to slide vehicle smoothly to user cursor path position
+        currentPercent += (targetPercent - currentPercent) * 0.15;
+      } else {
+        // Run standard loop automatically if no active mouse over execution is operating
+        currentPercent += 0.4;
+        if (currentPercent > 100) currentPercent = 0;
+      }
+      
+      updateCarPosition(currentPercent);
+      requestAnimationFrame(renderLoop);
+    }
+
+    // Launch window loop initialization sequence
+    window.addEventListener("resize", () => updateCarPosition(currentPercent));
+    renderLoop();
+
+    // 3. Per-card 3D tilt for the stats grid — leans toward the cursor like a physical tile
+    if (!reduceMotion) {
+      document.querySelectorAll(".stats-section .s").forEach((card) => {
+        card.addEventListener("mousemove", (e) => {
+          const rect = card.getBoundingClientRect();
+          const px = (e.clientX - rect.left) / rect.width;
+          const py = (e.clientY - rect.top) / rect.height;
+          const rotateY = (px - 0.5) * 16;
+          const rotateX = (0.5 - py) * 16;
+          card.style.transform = `perspective(700px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(6px)`;
+        });
+        card.addEventListener("mouseleave", () => {
+          card.style.transform = "perspective(700px) rotateX(0deg) rotateY(0deg) translateZ(0)";
+        });
+      });
+
+      // Stagger each stat card's reveal slightly for a cascading entrance
+      document.querySelectorAll(".stats-section .s").forEach((card, i) => {
+        card.style.setProperty("--stagger", `${i * 90}ms`);
+      });
+
+      // 4. Subtle hero parallax — badge and paragraph drift opposite the cursor for depth
+      const hero = document.querySelector(".hero");
+      const badge = document.querySelector(".hero-badge");
+      const paragraph = document.querySelector(".hero p");
+
+      hero.addEventListener("mousemove", (e) => {
+        const rect = hero.getBoundingClientRect();
+        const nx = (e.clientX - rect.left) / rect.width - 0.5;
+        const ny = (e.clientY - rect.top) / rect.height - 0.5;
+        badge.style.transform = `translate(${nx * 14}px, ${ny * 10 - 3}px)`;
+        paragraph.style.transform = `translate(${nx * 7}px, ${ny * 5}px)`;
+      });
+
+      hero.addEventListener("mouseleave", () => {
+        badge.style.transform = "translate(0, 0)";
+        paragraph.style.transform = "translate(0, 0)";
+      });
+    }
+
+    // 5. Scroll-reveal for the sections below the fold
+    const revealTargets = document.querySelectorAll(".reveal");
+    if ("IntersectionObserver" in window && revealTargets.length) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("in-view");
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.15 }
+      );
+      revealTargets.forEach((el) => observer.observe(el));
+    } else {
+      revealTargets.forEach((el) => el.classList.add("in-view"));
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends 'routing/base.html' %}
+{% block title %}Verify Verification Key — RouteOptima{% endblock %}
+{% block public %}
+<div class="auth-page" style="display:flex; align-items:center; justify-content:center; min-height:calc(100vh - 60px); padding:2rem 1rem; box-sizing:border-box;">
+  <div class="auth-card" style="background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:2rem; width:100%; max-width:420px; box-sizing:border-box;">
+    <h2>Enter Verification Code</h2>
+    <p class="sub" style="color:var(--text3); font-size:13px; margin-bottom:1.5rem;">A code was sent to <strong>{{ email }}</strong>. It remains valid for 5 minutes.</p>
+    
+    {% if messages %}
+    <div class="msg-list">
+      {% for m in messages %}
+      <div class="msg {% if m.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ m }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Verification Form -->
+    <form method="POST" id="verifyOtpForm" style="margin-bottom:1rem;">
+      {% csrf_token %}
+      <div class="form-group" style="margin-bottom:1.25rem;">
+        <label>6-Digit OTP</label>
+        <input type="text" name="otp" required maxlength="6" pattern="\d{6}" placeholder="123456" style="width:100%; text-align:center; letter-spacing:6px; font-size:18px; font-weight:700; box-sizing:border-box;">
+      </div>
+      <button type="submit" id="verifyOtpBtn" class="btn btn-primary btn-full" style="width:100%;">Verify OTP</button>
+    </form>
+    
+    <!-- Resend Form -->
+    <form method="POST" id="resendOtpForm">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="resend">
+      <div style="text-align:center; font-size:12px;">
+        <span style="color:var(--text3)">Didn't receive code?</span>
+        <button type="submit" id="resendOtpBtn" style="background:none; border:none; color:var(--accent2); cursor:pointer; padding:0; font-size:12px; font-weight:600; text-decoration:underline;">Resend Code</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Handle the verification form lock
+  document.getElementById('verifyOtpForm').addEventListener('submit', function(e) {
+    const form = this;
+    const btn = document.getElementById('verifyOtpBtn');
+    
+    if (btn.disabled) return;
+    
+    e.preventDefault();
+    btn.disabled = true;
+    btn.innerText = "Verifying OTP...";
+    
+    setTimeout(() => {
+      form.submit();
+    }, 450);
+  });
+
+  // Handle the resend form lock
+  document.getElementById('resendOtpForm').addEventListener('submit', function(e) {
+    const form = this;
+    const btn = document.getElementById('resendOtpBtn');
+    
+    if (btn.disabled) return;
+    
+    e.preventDefault();
+    btn.disabled = true;
+    btn.innerText = "Sending code...";
+    btn.style.cursor = "not-allowed";
+    btn.style.color = "var(--text3)";
+    
+    setTimeout(() => {
+      form.submit();
+    }, 450);
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'routing/base.html' %}
+{% load static %}
+{% block title %}Replay Route — RouteOptima{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>▶ Route Replay</h1>
+  <div class="desc">{{ route.src_name|default:"Start" }} → {{ route.dst_name|default:"End" }} · {{ route.path_distance_km }} km · {{ route.computed_at|date:"M j, Y H:i" }}</div>
+</div>
+<div style="padding:.5rem 1.75rem 1rem;height:calc(100vh - 130px)">
+  <div style="height:100%;border-radius:12px;overflow:hidden;border:1px solid var(--border);position:relative">
+    <div id="replayMap" style="width:100%;height:100%"></div>
+    <div style="position:absolute;bottom:1rem;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:.5rem">
+      <button class="btn btn-primary btn-sm" onclick="startReplay()">▶ Play</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetReplay()">↺ Reset</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const m = L.map('replayMap').setView([{{ route.src_lat }},{{ route.src_lon }}], 14);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(m);
+// Simple A→B line (real path requires storing coords, this is a placeholder)
+const src = [{{ route.src_lat }},{{ route.src_lon }}];
+const dst = [{{ route.dst_lat }},{{ route.dst_lon }}];
+const fullLine = L.polyline([src,dst],{color:'#3b82f6',weight:4,opacity:.4,dashArray:'8 4'}).addTo(m);
+m.fitBounds(fullLine.getBounds(),{padding:[60,60]});
+const marker = L.marker(src).addTo(m).bindPopup('{{ route.src_name|default:"Start" }}').openPopup();
+let animLine = null, frame = null;
+
+function startReplay() {
+  if (animLine) m.removeLayer(animLine);
+  animLine = L.polyline([src],{color:'#34d399',weight:5}).addTo(m);
+  let t = 0;
+  function step() {
+    t = Math.min(t + 0.015, 1);
+    const lat = src[0] + (dst[0]-src[0])*t;
+    const lon = src[1] + (dst[1]-src[1])*t;
+    marker.setLatLng([lat,lon]);
+    animLine.addLatLng([lat,lon]);
+    if (t < 1) frame = requestAnimationFrame(step);
+    else { marker.setLatLng(dst); marker.bindPopup('{{ route.dst_name|default:"End" }}').openPopup(); }
+  }
+  cancelAnimationFrame(frame);
+  step();
+}
+
+function resetReplay() {
+  cancelAnimationFrame(frame);
+  marker.setLatLng(src);
+  if (animLine) { m.removeLayer(animLine); animLine = null; }
+}
+</script>
+{% endblock %}

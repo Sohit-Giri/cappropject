@@ -1,0 +1,358 @@
+{% extends 'routing/base.html' %}
+{% load static %}
+{% block title %}Route Map — RouteOptima{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+{% block content %}
+
+<style>
+/* --- MULTI-MODAL COMPARISON HUB UI LAYOUT (LIGHT THEME MATCHED) --- */
+.comparison-hub-wrapper {
+  background: transparent;
+  border-radius: 8px;
+  padding: 14px 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.comparison-hub-title {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 6px;
+}
+
+.comparison-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.mode-summary-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 10px 12px;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.mode-summary-card:hover {
+  background: #f3f4f6;
+  transform: translateX(2px);
+}
+
+.mode-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.mode-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1f2937;
+  font-size: 13.5px;
+}
+
+.mode-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.mode-eta-badge {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.02em;
+}
+
+.mode-metrics-row {
+  display: flex;
+  gap: 16px;
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
+.metric-icon {
+  opacity: 0.8;
+  margin-right: 2px;
+}
+
+.comparison-actions-row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-action {
+  flex: 1;
+  border: none;
+  color: #ffffff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, filter 0.15s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-action:hover {
+  filter: brightness(0.95);
+}
+
+.btn-save { background: #2563eb; }
+.btn-share { background: #4b5563; }
+.btn-reset { background: #dc2626; }
+.mode-select-comparison {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.mode-card {
+  flex: 1;
+  background: var(--bg0);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.mode-card.active[data-mode="walk"] { border-color: var(--green); background: rgba(22, 163, 74, 0.05); }
+.mode-card.active[data-mode="bike"] { border-color: var(--yellow); background: rgba(217, 119, 6, 0.05); }
+.mode-card.active[data-mode="car"] { border-color: var(--accent); background: rgba(37, 99, 235, 0.05); }
+.mode-header { font-size: 13px; font-weight: 600; color: var(--text1); }
+.mode-eta { font-size: 14px; font-weight: 700; margin: 0.25rem 0; }
+.mode-dist { font-size: 11px; color: var(--text3); }
+
+/* --- BUTTON ROW FLEXBOX LAYOUT --- */
+.side-btn-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.side-btn-row .btn {
+  width: 49% !important;
+  margin: 0 !important;
+  box-sizing: border-box;
+}
+
+/* --- 1000% MOBILE & MULTI-DEVICE RESPONSIVENESS OVERRIDES --- */
+@media screen and (max-width: 768px) {
+  /* CRITICAL BREAKOUT: Forces the map application to ignore parent limits, hide the sidebar, and take over 100% of the mobile viewport */
+.map-layout {
+    display: flex !important;
+    flex-direction: column-reverse !important; /* Maps stay up, dashboard cards sit on bottom */
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  /* Transform control panel into a clean bottom sheet overlay */
+  .map-panel {
+    width: 100% !important;
+    max-height: 40vh !important; 
+    min-height: 240px !important;
+    overflow-y: auto !important;
+    box-shadow: 0 -6px 25px rgba(0, 0, 0, 0.18) !important;
+    border-radius: 20px 20px 0 0 !important; 
+    padding: 16px !important;
+    z-index: 100000 !important;
+    position: relative !important;
+    background: var(--bg0, #ffffff) !important;
+  }
+
+  /* Make sure map fills the remaining top portion */
+  .map-container {
+    flex: 1 !important;
+    height: 100% !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+
+  /* Fix form padding and layout size to stop horizontal blowout */
+  .place-search-wrap {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  .place-search-input {
+    font-size: 16px !important; /* Absolute fix for iOS safari auto-zoom-on-focus issue */
+    padding: 10px 12px 10px 32px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Strict side-by-side row management for touch targets */
+  .side-btn-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    margin: 0.5rem 0 !important;
+  }
+
+  .side-btn-row .btn {
+    width: 48.5% !important; /* Perfect split accounting for micro gaps */
+    padding: 12px 6px !important; /* Taller touch targets for fingers */
+    font-size: 13px !important;
+    display: inline-flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+
+  /* Routing selection cards grid alignment */
+  .mode-select-comparison {
+    display: flex !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+
+  .mode-card {
+    padding: 0.6rem 0.2rem !important;
+    font-size: 11px !important;
+  }
+
+  .mode-header { font-size: 11.5px !important; }
+  .mode-eta { font-size: 13px !important; margin: 0.1rem 0 !important; }
+  .mode-dist { font-size: 10px !important; }
+
+  /* Smooth layout adaptation for action modules */
+  #routeResult .btn-sm {
+    padding: 12px 4px !important;
+    font-size: 13px !important;
+  }
+
+  button[onclick="clearRoute()"] {
+    margin-top: 1.25rem !important;
+    padding: 12px !important;
+    width: 100% !important;
+  }
+}
+
+/* Micro devices fallback logic */
+@media screen and (max-width: 360px) {
+  .mode-header { font-size: 10.5px !important; }
+  .mode-eta { font-size: 11px !important; }
+  .side-btn-row .btn { font-size: 11px !important; }
+}
+</style>
+<div class="map-layout" style="height:calc(100vh - 0px)">
+  <!-- Side panel -->
+  <div class="map-panel">
+<div style="font-size:12px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.7px">Start Point</div>
+<div class="place-search-wrap">
+  <span class="place-search-icon">🔍</span>
+  <input id="srcInput" class="place-search-input" type="text" placeholder="Search start (e.g. Pashupatinath)" autocomplete="off">
+  <div id="srcResults" class="place-results" style="display:none"></div>
+</div>
+<div id="srcCoord" class="coord-row" style="display:none">
+  <span class="lbl" style="color:var(--green)">A</span>
+  <span class="coord-text"></span>
+</div>
+
+<!-- UPDATED START ROW -->
+<div class="side-btn-row">
+    <button id="btn-start-map" class="btn btn-ghost btn-sm" onclick="handleMapClickToggle('src', 'btn-start-map', 'Click on the map to set start point')">📌 Click on map</button>
+    <button id="btn-start-current" class="btn btn-ghost btn-sm" onclick="useCurrentLocation('src')">📍 Current Loc</button>
+</div>
+
+
+<div style="font-size:12px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-top:.5rem">End Point</div>
+<div class="place-search-wrap">
+  <span class="place-search-icon">🔍</span>
+  <input id="dstInput" class="place-search-input" type="text" placeholder="Search destination (e.g. Boudha)" autocomplete="off">
+  <div id="dstResults" class="place-results" style="display:none"></div>
+</div>
+<div id="dstCoord" class="coord-row" style="display:none">
+  <span class="lbl" style="color:var(--red)">B</span>
+  <span class="coord-text"></span>
+</div>
+
+<!-- UPDATED END ROW -->
+<div class="side-btn-row">
+    <button id="btn-dest-map" class="btn btn-ghost btn-sm" onclick="handleMapClickToggle('dst', 'btn-dest-map', 'Click on the map to set end point')">📌 Click on map</button>
+    <button id="btn-dest-current" class="btn btn-ghost btn-sm" onclick="useCurrentLocation('dst')">📍 Current Loc</button>
+</div>
+
+    <!-- Routing Comparisons section remains exactly as you had it below... -->
+
+<!-- Replace the Travel Mode select section with this -->
+<div style="font-size:12px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-top:.5rem">Routing Comparisons</div>
+<div class="mode-select-comparison">
+  <div class="mode-card active" data-mode="walk" id="card-walk">
+    <div class="mode-header">🚶 Walk</div>
+    <div class="mode-eta" id="eta-walk">-- min</div>
+    <div class="mode-dist" id="dist-walk">-- km</div>
+  </div>
+  <div class="mode-card active" data-mode="bike" id="card-bike">
+    <div class="mode-header">🚲 Bike</div>
+    <div class="mode-eta" id="eta-bike">-- min</div>
+    <div class="mode-dist" id="dist-bike">-- km</div>
+  </div>
+  <div class="mode-card active" data-mode="car" id="card-car">
+    <div class="mode-header">🚗 Car</div>
+    <div class="mode-eta" id="eta-car">-- min</div>
+    <div class="mode-dist" id="dist-car">-- km</div>
+  </div>
+</div>
+<input type="hidden" id="selectedMode" value="all">
+
+    <div id="routeResult" style="display:none">
+      <div class="route-result">
+        <div class="card-title" style="margin-bottom:.5rem">Route Found</div>
+        <div class="row"><span class="label">Distance</span><span class="value" id="routeKm">—</span></div>
+        <div class="row"><span class="label">ETA</span><span class="value" id="routeEta">—</span></div>
+        <div class="row"><span class="label">Nodes</span><span id="routeNodes" style="font-size:13px;color:var(--text2)">—</span></div>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem">
+        <button class="btn btn-secondary btn-sm" onclick="saveRoute()" style="flex:1">⭐ Save</button>
+        <button class="btn btn-secondary btn-sm" onclick="shareRoute()" style="flex:1">🔗 Share</button>
+        <a id="replayBtn" href="#" class="btn btn-secondary btn-sm" style="flex:1">▶</a>
+      </div>
+    </div>
+
+    <button class="btn btn-ghost btn-sm" onclick="clearRoute()" style="margin-top:auto">✕ Clear</button>
+
+    <div style="display:flex;align-items:center;gap:.4rem;font-size:12px;padding:.5rem 0;border-top:1px solid var(--border);margin-top:.25rem">
+      <span id="statusDot" class="status-dot dot-yellow"></span>
+      <span id="statusLbl" style="color:var(--text2)">Checking…</span>
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div class="map-container">
+    <div id="mapLoading" class="map-loading" style="display:none">
+      <div class="spinner"></div>
+      <span>Computing route…</span>
+    </div>
+    <div id="map"></div>
+    <div id="mapHint" class="map-hint">Search or click map to set start point</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'routing/js/map.js' %}"></script>
+<script>
+document.getElementById('routeResult').querySelectorAll('#routeNodes').forEach(()=>{});
+document.getElementById('replayBtn').addEventListener('click', e=>{
+  if(window._lastRouteId){ e.currentTarget.href='/replay/'+window._lastRouteId+'/'; }
+});
+  document.documentElement.setAttribute('data-theme', 'parchment');
+
+</script>
+{% endblock %}

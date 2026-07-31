@@ -1,0 +1,99 @@
+{% extends 'routing/base.html' %}
+{% block title %}Favourites — RouteOptima{% endblock %}
+{% block content %}
+<style>
+  /* --- CRITICAL RESPONSIVE FIXES --- */
+  @media screen and (max-width: 768px) {
+    .app-layout { height: auto !important; overflow: visible !important; }
+    .main-content { height: auto !important; overflow: visible !important; padding: 0 1rem 2rem 1rem !important; }
+    
+    .saved-card {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 1rem !important;
+    }
+    .action-group {
+      width: 100% !important;
+      justify-content: flex-end !important;
+    }
+  }
+
+  /* List layout for cards */
+  .saved-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+  
+  .saved-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg0, #ffffff);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 8px;
+  }
+
+  .action-group {
+    display: flex;
+    gap: 0.4rem;
+  }
+</style>
+
+<div class="page-header">
+  <h1>⭐ Saved Favourites</h1>
+  <div class="desc">Your bookmarked routes.</div>
+</div>
+
+<div class="page-body">
+  {% if saved %}
+  <div class="saved-list">
+    {% for s in saved %}
+    <div class="saved-card" id="saved-{{ s.id }}">
+      <div class="saved-icon" style="font-size:1.5rem">⭐</div>
+      <div style="flex:1">
+        <div class="saved-label" style="font-weight:600">{{ s.label }}</div>
+        <div class="saved-meta" style="font-size:12px; color:var(--text3)">
+          {{ s.route_log.src_name|default:"—" }} → {{ s.route_log.dst_name|default:"—" }} 
+          · {{ s.route_log.path_distance_km }} km 
+          · {{ s.saved_at|date:"M j, Y" }}
+        </div>
+      </div>
+      
+      <div class="action-group">
+        <a href="{% url 'replay' s.route_log.id %}" class="btn btn-secondary btn-sm">▶ Replay</a>
+        <a href="/share/{{ s.route_log.share_token }}/" class="btn btn-ghost btn-sm">🔗 Share</a>
+        <button class="btn btn-danger btn-sm" onclick="deleteSaved({{ s.id }})" title="Remove">✕</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center; padding:3rem">
+    <div style="font-size:3rem; margin-bottom:.75rem">⭐</div>
+    <div style="font-weight:700; margin-bottom:.4rem">No saved routes yet</div>
+    <div style="color:var(--text2); font-size:13px; margin-bottom:1rem">Compute a route and click "Save" to bookmark it.</div>
+    <a href="{% url 'map' %}" class="btn btn-primary">Open Route Map</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function deleteSaved(id) {
+  if (!confirm('Remove this saved route?')) return;
+  const r = await fetch(`/api/delete-saved/${id}/`, {
+    method:'DELETE', credentials:'same-origin',
+    headers:{'X-CSRFToken': document.cookie.split('; ').find(r=>r.startsWith('csrftoken='))?.split('=')[1]||''}
+  });
+  const j = await r.json();
+  if (j.status === 'ok') document.getElementById('saved-'+id)?.remove();
+}
+
+  document.documentElement.setAttribute('data-theme', 'parchment');
+
+</script>
+{% endblock %}

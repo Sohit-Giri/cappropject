@@ -1,0 +1,103 @@
+{% extends 'routing/base.html' %}
+{% block title %}History — RouteOptima{% endblock %}
+{% block content %}
+<style>
+  /* --- CRITICAL SCROLLING & RESPONSIVENESS FIXES --- */
+  @media screen and (max-width: 768px) {
+    /* Override base layout locks to restore full native finger-swiping & page vertical scrolling */
+    html, body {
+      overflow: auto !important;
+      height: auto !important;
+    }
+    .app-layout {
+      height: auto !important;
+      overflow: visible !important;
+    }
+    .main-content {
+      height: auto !important;
+      overflow: visible !important;
+      padding: 0 1rem 2rem 1rem !important; /* Added edge framing space */
+    }
+    .page-header {
+      padding: 1rem 0 !important;
+      margin-bottom: 0.5rem !important;
+    }
+    .page-header h1 {
+      font-size: 1.5rem !important;
+    }
+    /* Allow the table wrapper to scroll horizontally on small screens without breaking layout */
+    .table-wrap {
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border, #e5e7eb);
+      border-radius: 8px;
+      background: var(--bg0, #ffffff);
+    }
+    table {
+      min-width: 600px; /* Ensures the table columns maintain a clean layout structure on small viewports */
+    }
+  }
+
+  /* Standardized responsive button layout wrap */
+  .action-btn-group {
+    display: flex !important;
+    gap: 0.4rem !important;
+    align-items: center;
+  }
+</style>
+
+<div class="page-header">
+  <h1>⏱ Route History</h1>
+  <div class="desc">All {{ routes.count }} routes computed by your account.</div>
+</div>
+
+<div class="page-body">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Distance</th>
+          <th>Nodes</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in routes %}
+        <tr>
+          <td style="color:var(--text3)">{{ r.id }}</td>
+          <td>{{ r.src_name|default:"—" }}</td>
+          <td>{{ r.dst_name|default:"—" }}</td>
+          <td><span class="badge badge-blue">{{ r.path_distance_km }} km</span></td>
+          <td style="color:var(--text3)">{{ r.node_count }}</td>
+          <td style="color:var(--text3)">{{ r.computed_at|date:"M j, Y H:i" }}</td>
+          <td>
+            <div class="action-btn-group">
+              <a href="{% url 'replay' r.id %}" class="btn btn-ghost btn-sm" title="Replay Route">Replay</a>
+              <a href="/share/{{ r.share_token }}/" class="btn btn-ghost btn-sm" title="Share Link">Share</a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="text-align:center; padding:3rem; color:var(--text3)">
+            No routes yet — <a href="{% url 'map' %}" style="color:var(--accent, #2563eb); font-weight: 600;">compute your first!</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+
+<script>
+  document.documentElement.setAttribute('data-theme', 'parchment');
+
+</script>
+{% endblock %}

@@ -1,0 +1,140 @@
+import os
+import logging
+import networkx as nx
+
+logger = logging.getLogger(__name__)
+
+
+class GraphManager:
+    _instance = None
+    _graph = None
+    _districts = []
+    _loaded_count = 0
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    def load_districts(self, districts, cache_dir=None):
+        # Prevent reloading if graph already exists in memory
+        if self._graph is not None:
+            logger.info("Graph already loaded in this instance memory.")
+            return self._graph
+
+        import osmnx as ox
+        from django.conf import settings
+
+        # Force use of absolute configuration directory from settings.py
+        if cache_dir is None:
+            cache_dir = str(settings.GRAPH_CACHE_DIR)
+
+        self._districts = districts
+        self._loaded_count = 0  # <--- FIX: Reset counter before loading loop!
+
+        os.makedirs(cache_dir, exist_ok=True)
+        graphs = []
+
+        for place in districts:
+            safe = (
+                place.replace(",", "")
+                .replace(" ", "_")
+                .replace("/", "_")
+                .lower()[:50]
+            )
+
+            path = os.path.join(cache_dir, f"{safe}.graphml")
+            fallback_path = os.path.join(
+                cache_dir,
+                "budhanilkantha_kirtipur.graphml"
+            )
+
+            try:
+                if os.path.exists(fallback_path):
+                    print(f"LOADING LOCALIZED MESH FILE: {fallback_path}")
+                    logger.info(f"Loading cached graph: {fallback_path}")
+                    g = ox.load_graphml(fallback_path)
+                elif os.path.exists(path):
+                    print(f"LOADING ABSOLUTE CACHE FILE: {path}")
+                    g = ox.load_graphml(path)
+                else:
+                    print(f"ERROR: Graph file not found on disk at: {fallback_path}")
+                    raise FileNotFoundError(f"Missing map file for {place}")
+
+                graphs.append(g)
+                self._loaded_count += 1
+
+                logger.info(
+                    f"Loaded {self._loaded_count}/"
+                    f"{len(districts)} districts"
+                )
+
+            except Exception as e:
+                print(
+                    f"CRITICAL INITIALIZATION EXCEPTION: "
+                    f"{str(e)}"
+                )
+
+                logger.warning(
+                    f"Skipping {place}: {e}"
+                )
+
+        if graphs:
+            self._graph = (
+                nx.compose_all(graphs)
+                if len(graphs) > 1
+                else graphs[0]
+            )
+
+            logger.info(
+                f"Combined graph: "
+                f"{len(self._graph.nodes)} nodes, "
+                f"{len(self._graph.edges)} edges"
+            )
+
+            return self._graph
+
+        logger.error(
+            "No district graphs could be loaded!"
+        )
+
+        return None
+
+    def get_nearest_node(self, lat, lon):
+        import osmnx as ox
+
+        if self._graph is None:
+            raise RuntimeError("Graph not loaded yet")
+
+        return ox.nearest_nodes(
+            self._graph,
+            X=lon,
+            Y=lat
+        )
+
+    def get_graph(self):
+        return self._graph
+
+    def is_loaded(self):
+        return self._graph is not None
+
+    def get_info(self):
+        total = len(self._districts)
+        
+        if not self.is_loaded():
+            return {
+                "loaded": False,
+                "message": f"Loading districts ({self._loaded_count}/{total})...",
+                "loaded_count": self._loaded_count,
+                "total": total,
+            }
+
+        return {
+            "loaded": True,
+            "districts": self._districts,
+            "nodes": len(self._graph.nodes),
+            "edges": len(self._graph.edges),
+            "loaded_count": self._loaded_count,
+            "total": total,
+        }

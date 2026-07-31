@@ -1,0 +1,245 @@
+{% extends 'routing/base.html' %}
+{% block title %}Settings — RouteOptima{% endblock %}
+{% block content %}
+
+<!-- Inline script to prevent theme flashing during page load -->
+<script>
+  (function() {
+    const savedTheme = localStorage.getItem('theme') || 'parchment';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  })();
+</script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* Variables strictly mapped to maintain cohesive theme identity */
+  :root, [data-theme="parchment"] {
+    --bg0: #fcfaf2;
+    --bg1: #ffffff;
+    --bg2: #f4f1e6;
+    --bg3: #e9e4d5;
+    --bg4: #dbd4c0;
+    --accent: #2563eb;
+    --accent2: #1d4ed8;
+    --accent3: #1e40af;
+    --text1: #000000;
+    --text2: #1e293b;
+    --text3: #64748b;
+    --green: #16a34a;
+    --red: #dc2626;
+    --yellow: #d97706;
+    --purple: #7c3aed;
+    --border: #e2e8f0;
+    --card-glow: rgba(37, 99, 235, 0.04);
+  }
+
+  [data-theme="emerald"] {
+    --bg0: #050f0a;
+    --bg1: #081a10;
+    --bg2: #0c2418;
+    --bg3: #103020;
+    --bg4: #15422c;
+    --accent: #10b981;
+    --accent2: #34d399;
+    --accent3: #059669;
+    --text1: #ffffff; /* Absolute pure white text on emerald green theme */
+    --text2: #e2f8ed;
+    --text3: #a7f3d0;
+    --green: #a7f3d0;
+    --red: #fca5a5;
+    --yellow: #fde68a;
+    --purple: #c4b5fd;
+    --border: rgba(16, 185, 129, 0.2);
+    --card-glow: rgba(16, 185, 129, 0.08);
+  }
+
+  .page-header {
+    margin-bottom: 2rem;
+  }
+
+  .page-header h1 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text1);
+    margin-bottom: 0.25rem;
+  }
+
+  .page-header .desc {
+    font-size: 14px;
+    color: var(--text3);
+  }
+
+  .card {
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px var(--card-glow);
+    transition: background .3s, border-color .3s;
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text1);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.2px;
+  }
+
+  .settings-text {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.4;
+  }
+
+  .theme-switcher {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .theme-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    border: 2px solid var(--border);
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .theme-dot:hover {
+    transform: scale(1.1);
+  }
+
+  .theme-dot.selected {
+    border-color: var(--accent);
+    transform: scale(1.05);
+  }
+
+  .theme-dot.selected::after {
+    content: "✓";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  .theme-dot[data-t="parchment"] { background: #ffffff; border-color: #dbd4c0; }
+  .theme-dot[data-t="parchment"].selected::after { color: #2563eb; }
+  .theme-dot[data-t="emerald"] { background: #081a10; border-color: #10b981; }
+  .theme-dot[data-t="emerald"].selected::after { color: #ffffff; }
+
+  /* Evaluated dynamically via var(--text1) ensuring complete canvas adherence */
+  .theme-desc {
+    font-size: 12px;
+    color: var(--text1);
+    margin-top: 0.65rem;
+    font-weight: 600;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    border-radius: 8px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all .2s;
+    text-decoration: none;
+    white-space: nowrap;
+    box-sizing: border-box;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+    padding: .75rem 1.5rem;
+    font-size: 14px;
+  }
+
+  .btn-primary:hover {
+    background: var(--accent2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--card-glow);
+  }
+
+  .message {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+  .message.error { background: rgba(220, 38, 38, 0.1); color: var(--red); border: 1px solid rgba(220, 38, 38, 0.2); }
+  .message.success { background: rgba(22, 163, 74, 0.1); color: var(--green); border: 1px solid rgba(22, 163, 74, 0.2); }
+</style>
+
+<div class="page-header">
+  <h1>⚙ Settings</h1>
+  <div class="desc">Customise your RouteOptima experience.</div>
+</div>
+
+<div class="page-body">
+  <div style="max-width:560px">
+    {% if messages %}{% for m in messages %}<div class="message {{ m.tags }}">{{ m }}</div>{% endfor %}{% endif %}
+    
+    <form method="POST">
+      {% csrf_token %}
+      
+      <!-- Appearance configuration block -->
+      <div class="card" style="margin-bottom:1.5rem">
+        <div class="card-title">Appearance Theme</div>
+        <p class="settings-text">
+          Choose your preferred colour scheme. This is saved to your account session and synced across modules.
+        </p>
+        
+        <div class="theme-switcher">
+          <div class="theme-dot {% if pref.theme == 'parchment' or not pref.theme %}selected{% endif %}" data-t="parchment" title="Parchment (Light)"></div>
+          <div class="theme-dot {% if pref.theme == 'emerald' %}selected{% endif %}" data-t="emerald" title="Emerald (Dark)"></div>
+        </div>
+        
+        <!-- Dynamic isolated text description layout element -->
+        <div class="theme-desc" id="dynamicThemeText">
+          {% if pref.theme == 'emerald' %}Emerald (Terminal Dark){% else %}Parchment (Classic Light){% endif %}
+        </div>
+        <input type="hidden" name="theme" id="themeInput" value="{{ pref.theme|default:'parchment' }}">
+      </div>
+
+      <button type="submit" class="btn btn-primary">Save Settings</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll('.theme-dot').forEach(d => {
+    d.addEventListener('click', () => {
+      document.querySelectorAll('.theme-dot').forEach(dot => dot.classList.remove('selected'));
+      d.classList.add('selected');
+      
+      const targetedTheme = d.dataset.t;
+      document.getElementById('themeInput').value = targetedTheme;
+      
+      // Update dynamic metadata label safely injection
+      const textDisplay = document.getElementById('dynamicThemeText');
+      if (targetedTheme === 'emerald') {
+        textDisplay.textContent = 'Emerald (Terminal Dark)';
+      } else {
+        textDisplay.textContent = 'Parchment (Classic Light)';
+      }
+      
+      document.documentElement.setAttribute('data-theme', targetedTheme);
+      localStorage.setItem('theme', targetedTheme);
+    });
+  });
+</script>
+{% endblock %}
